@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from datetime import timedelta
 from app.database import database
 from app import crud
-from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
+from app.auth import creadte_access_token, verify_password, get_password_hash, decode_access_token, Token
 from app.schemas import ItemCreate, Item
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 토큰 만료 시간 설정
