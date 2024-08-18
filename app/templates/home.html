@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlipShop</title>
+    <link rel="stylesheet" href="/app/static/styles.css">
+    <style>
+        /* styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+}
+
+header {
+    background-color: #fff;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    margin: 0;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    background-color: #fff;
+    padding: 10px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+nav button {
+    background: none;
+    border: none;
+    font-size: 16px;
+    margin: 0 10px;
+    cursor: pointer;
+}
+
+nav button:hover {
+    color: #007bff;
+}
+
+.categories {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 10px 0;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.categories button {
+    background-color: #e0e0e0;
+    border: none;
+    border-radius: 5px;
+    margin: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+.categories button:hover {
+    background-color: #d0d0d0;
+}
+
+main {
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.item {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    padding: 15px;
+    width: 200px;
+    text-align: center;
+}
+
+.image-placeholder {
+    background-color: #e0e0e0;
+    height: 150px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+    <header>
+        <h1>FlipShop</h1>
+    </header>
+    <nav>
+        <button>중고렌트</button>
+        <button>중고구매</button>
+    </nav>
+    <section class="categories">
+        <button>#디지털기기</button>
+        <button>#가구/인테리어</button>
+        <button>#가전</button>
+        <button>#의류</button>
+        <button>#스포츠</button>
+        <button>#게임</button>
+        <button>#책</button>
+        <button>+더보기</button>
+    </section>
+    <main>
+        <div class="item">
+            <div class="image-placeholder"></div>
+            <h2>상품명</h2>
+            <p>#상품카테고리 | 지역카테고리</p>
+            <p>10,000원</p>
+        </div>
+        <div class="item">
+            <div class="image-placeholder"></div>
+            <h2>상품명</h2>
+            <p>#상품카테고리 | 지역카테고리</p>
+            <p>10,000원</p>
+        </div>
+        <div class="item">
+            <div class="image-placeholder"></div>
+            <h2>상품명</h2>
+            <p>#상품카테고리 | 지역카테고리</p>
+            <p>10,000원</p>
+        </div>
+    </main>
+</body>
+</html>
