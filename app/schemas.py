@@ -1,14 +1,18 @@
 # app/schemas.py
 from pydantic import BaseModel, Field
 
-class ItemCreate(BaseModel):
-    owner_id: int
+class ItemBase(BaseModel):
     name: str
     description: str
-    price_per_day: float = Field(..., gt=0)
+    price_per_day: float
+    owner_id: int
 
-class Item(ItemCreate):
+class ItemCreate(ItemBase):
+    image_url: str
+
+class Item(ItemBase):
     id: int
+    image_url: str
     available: bool
 
     class Config:
