@@ -1,6 +1,7 @@
 # app/crud.py
 from app.models import users, items, rentals
 from app.database import database
+from typing import List, Optional
 
 # Users
 async def create_user(username: str, password: str):
@@ -12,8 +13,8 @@ async def get_user(username: str):
     return await database.fetch_one(query)
 
 # Items
-async def create_item(owner_id: int, name: str, description: str, price_per_day: float):
-    query = items.insert().values(owner_id=owner_id, name=name, description=description, price_per_day=price_per_day)
+async def create_item(owner_id: int, name: str, description: str, price_per_day: float, image_urls: Optional[List[str]] = None):
+    query = items.insert().values(owner_id=owner_id, name=name, description=description, price_per_day=price_per_day, image_urls=image_urls)
     item_id = await database.execute(query)
     return item_id
 

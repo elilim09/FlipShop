@@ -1,13 +1,16 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi import FastAPI, HTTPException, Depends, status, Request, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from datetime import timedelta
+from typing import List, Optional
+import requests
 from app.database import database
 from app import crud
-from app.auth import creadte_access_token, verify_password, get_password_hash, decode_access_token, Token
+from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
 from app.schemas import ItemCreate, Item
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 토큰 만료 시간 설정
+CLOUDTYPE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiIzMnVwZHp0MmFscG8xMWcxcCIsImlhdCI6MTcyNDU0OTEzMX0.5ErRKcQgk5DIEs5on8dLvnNLwzrezZ9hyiChGi62GZ0"
 
 templates = Jinja2Templates(directory="app/templates")
 app = FastAPI()
@@ -54,8 +57,9 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 # Items
 @app.post("/items/", response_model=Item)
 async def create_item(item: ItemCreate):
-    item_id = await crud.create_item(item.owner_id, item.name, item.description, item.price_per_day)
-    print({item.owner_id})
+    # 이미지가 없을 경우 빈 리스트로 처리
+    image_urls = item.images if item.images else []
+    item_id = await crud.create_item(item.owner_id, item.name, item.description, item.price_per_day, image_urls)
     if item_id is None:
         raise HTTPException(status_code=500, detail="Item ID was not generated correctly.")
     return {"id": item_id, **item.dict(), "available": True}
@@ -63,6 +67,30 @@ async def create_item(item: ItemCreate):
 @app.get("/create_item")
 async def create_item_page(request: Request):
     return templates.TemplateResponse("create_item.html", {'request': request})
+
+@app.post("/upload_image/")
+async def upload_image(images: List[UploadFile] = File(None)):  # 파일이 없을 수 있음을 허용
+    image_urls = []
+
+    if images:
+        for image in images:
+            contents = await image.read()
+            # 클라우드타입 API로 이미지 업로드
+            response = requests.post(
+                "https://api.cloudtype.io/upload",
+                headers={"Authorization": f"Bearer {CLOUDTYPE_API_KEY}"},
+                files={"file": contents},
+            )
+
+            if response.status_code != 200:
+                print("Error:", response.status_code, response.text)
+                raise HTTPException(status_code=500, detail="Image upload failed")
+
+            # 업로드된 이미지의 URL 얻기
+            image_url = response.json().get("url")
+            image_urls.append(image_url)
+    
+    return {"image_urls": image_urls}
 
 @app.get("/items/{item_id}")
 async def read_item(item_id: int, request: Request):
