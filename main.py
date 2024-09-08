@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from datetime import timedelta
@@ -6,8 +6,19 @@ from app.database import database
 from app import crud
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
 from app.schemas import ItemCreate, Item
+from pydantic import BaseModel, condecimal
+import httpx
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 토큰 만료 시간 설정
+IMG_API_KEY = "03793201bec72665258582109933dc9e"
+
+class Item(BaseModel):
+    name: str
+    description: str
+    price_per_day: condecimal(max_digits=10, decimal_places=2)
+    owner_id: int
+    image_url: str = None
+
 
 templates = Jinja2Templates(directory="app/templates")
 app = FastAPI()
@@ -51,14 +62,40 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-# Items
+#items
 @app.post("/items/", response_model=Item)
-async def create_item(item: ItemCreate):
-    item_id = await crud.create_item(item.owner_id, item.name, item.description, item.price_per_day)
-    print({item.owner_id})
+async def create_item(
+    name: str = Form(...),
+    description: str = Form(...),
+    price_per_day: condecimal(max_digits=10, decimal_places=2) = Form(...),
+    owner_id: int = Form(...),
+    file: UploadFile = File(...)
+):
+    imgbb_url = "https://api.imgbb.com/1/upload"
+    file_content = await file.read()  # 비동기 파일 읽기
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            imgbb_url, 
+            params={"key": IMG_API_KEY},
+            files={"image": (file.filename, file_content, file.content_type)}
+        )
+
+    data = response.json()
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to upload image to imgbb")
+
+    image_url = data["data"]["url"]
+
+    # 데이터베이스에 아이템 저장
+    item_id = await crud.create_item(owner_id, name, description, price_per_day, image_url)
+    
     if item_id is None:
         raise HTTPException(status_code=500, detail="Item ID was not generated correctly.")
-    return {"id": item_id, **item.dict(), "available": True}
+    
+    # 생성된 아이템의 정보를 반환
+    return {"id": item_id, "name": name, "description": description, "price_per_day": price_per_day, "owner_id": owner_id, "image_url": image_url, "available": True}
 
 @app.get("/create_item")
 async def create_item_page(request: Request):

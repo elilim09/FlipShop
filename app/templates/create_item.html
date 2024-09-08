@@ -117,34 +117,41 @@
 
     <script>
         document.getElementById('create-item-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
+    event.preventDefault();
 
-            const formData = new FormData(this);
+    const formData = new FormData(this);
 
-            try {
-                const response = await fetch('/items/', {
-                    method: 'POST',
-                    body: formData
-                });
+    // Debugging FormData contents
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+    }
 
-                if (response.ok) {
-                    document.getElementById('message').innerText = '아이템이 성공적으로 생성되었습니다!';
-                    document.getElementById('message').style.display = 'block';
-                    this.reset();
-                } else {
-                    const errorData = await response.json();
-                    document.getElementById('message').innerText = '아이템 생성 실패: ' + errorData.detail;
-                    document.getElementById('message').style.backgroundColor = '#f8d7da';
-                    document.getElementById('message').style.color = '#721c24';
-                    document.getElementById('message').style.display = 'block';
-                }
-            } catch (error) {
-                document.getElementById('message').innerText = '서버와 통신 중 오류가 발생했습니다.';
-                document.getElementById('message').style.backgroundColor = '#f8d7da';
-                document.getElementById('message').style.color = '#721c24';
-                document.getElementById('message').style.display = 'block';
-            }
+    try {
+        const response = await fetch('/items/', {
+            method: 'POST',
+            body: formData
         });
+
+        if (response.ok) {
+            document.getElementById('message').innerText = '아이템이 성공적으로 생성되었습니다!';
+            document.getElementById('message').style.display = 'block';
+            this.reset();
+        } else {
+            const errorData = await response.json();
+            console.log(errorData);  // Log the error response
+            document.getElementById('message').innerText = '아이템 생성 실패: ' + errorData.detail;
+            document.getElementById('message').style.backgroundColor = '#f8d7da';
+            document.getElementById('message').style.color = '#721c24';
+            document.getElementById('message').style.display = 'block';
+        }
+    } catch (error) {
+        document.getElementById('message').innerText = '서버와 통신 중 오류가 발생했습니다.';
+        document.getElementById('message').style.backgroundColor = '#f8d7da';
+        document.getElementById('message').style.color = '#721c24';
+        document.getElementById('message').style.display = 'block';
+    }
+});
+
     </script>
 </body>
 </html>
