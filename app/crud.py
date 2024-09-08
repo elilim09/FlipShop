@@ -13,13 +13,13 @@ async def get_user(username: str):
     return await database.fetch_one(query)
 
 # Items
-async def create_item(owner_id: int, name: str, description: str, price_per_day: float, image_url: str):
+async def create_item(_owner_id: int, _name: str, _description: str, _price_per_day: float, _image_url: str):
     query = insert(items).values(
-        owner_id=owner_id,
-        name=name,
-        description=description,
-        price_per_day=price_per_day,
-        image_url=image_url
+        owner_id=_owner_id,
+        name=_name,
+        description=_description,
+        price_per_day=_price_per_day,
+        image_url=_image_url
     ).returning(items.c.id)
     result = await database.execute(query)
     return result

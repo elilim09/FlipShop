@@ -15,7 +15,7 @@ IMG_API_KEY = "03793201bec72665258582109933dc9e"
 class Item(BaseModel):
     name: str
     description: str
-    price_per_day: condecimal(max_digits=10, decimal_places=2)
+    price_per_day: condecimal(max_digits=10, decimal_places=2) # type: ignore
     owner_id: int
     image_url: str = None
 
@@ -71,30 +71,34 @@ async def create_item(
     owner_id: int = Form(...),
     file: UploadFile = File(...)
 ):
-    imgbb_url = "https://api.imgbb.com/1/upload"
-    file_content = await file.read()  # 비동기 파일 읽기
+    # 파일 타입 확인 (JPEG, PNG만 허용)
+    if file.content_type not in ['image/jpeg', 'image/png']:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG files are allowed.")
 
+    # 파일 내용 읽기 및 처리
+    file_content = await file.read()
+
+    # imgbb로 파일 업로드
+    imgbb_url = "https://api.imgbb.com/1/upload"
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            imgbb_url, 
+            imgbb_url,
             params={"key": IMG_API_KEY},
             files={"image": (file.filename, file_content, file.content_type)}
         )
 
-    data = response.json()
-
     if response.status_code != 200:
         raise HTTPException(status_code=500, detail="Failed to upload image to imgbb")
 
+    data = response.json()
     image_url = data["data"]["url"]
 
-    # 데이터베이스에 아이템 저장
+    # 데이터베이스에 저장
     item_id = await crud.create_item(owner_id, name, description, price_per_day, image_url)
-    
+
     if item_id is None:
         raise HTTPException(status_code=500, detail="Item ID was not generated correctly.")
-    
-    # 생성된 아이템의 정보를 반환
+
     return {"id": item_id, "name": name, "description": description, "price_per_day": price_per_day, "owner_id": owner_id, "image_url": image_url, "available": True}
 
 @app.get("/create_item")
