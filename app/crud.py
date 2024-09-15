@@ -21,7 +21,7 @@ async def create_item(_owner_id: int, _name: str, _description: str, _price_per_
         price_per_day=_price_per_day,
         image_url=_image_url
     ).returning(items.c.id)
-    result = await database.execute(query)
+    result = await database.engine.execute("SHOW DATABASES")
     return result
 
 async def get_item(item_id: int):

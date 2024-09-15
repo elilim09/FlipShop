@@ -94,7 +94,7 @@
     </div>
     <div class="container">
         <h2>아이템 생성</h2>
-        <form id="create-item-form" enctype="multipart/form-data">
+        <form id="create-item-form" enctype="multipart/form-data" action="/item/" method="POST">
             <label for="name">아이템 이름</label>
             <input type="text" id="name" name="name" required>
 
@@ -108,8 +108,8 @@
             <input type="number" id="owner_id" name="owner_id" required>
 
             <label for="image">아이템 이미지</label>
-            <input type="file" id="image" name="image" accept="image/*" required>
-
+            <input type="file" id="image" name="file" accept="image/*" required>
+            
             <button type="submit">아이템 생성</button>
         </form>
         <div id="message" class="message" style="display: none;"></div>
@@ -123,8 +123,13 @@
 
     // Debugging FormData contents
     for (let [key, value] of formData.entries()) {
+    if (key === 'image') {
+        console.log(`${key}:`, value);  // 이미지 파일을 확인
+    } else {
         console.log(`${key}: ${value}`);
     }
+}
+
 
     try {
         const response = await fetch('/items/', {

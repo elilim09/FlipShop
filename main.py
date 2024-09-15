@@ -5,12 +5,15 @@ from datetime import timedelta
 from app.database import database
 from app import crud
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
-from app.schemas import ItemCreate, Item
+from app.schemas import ItemCreate, Item, ItemBase
 from pydantic import BaseModel, condecimal
 import httpx
+import dropbox
+from dropbox.files import WriteMode
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 토큰 만료 시간 설정
-IMG_API_KEY = "03793201bec72665258582109933dc9e"
+DROP_API_KEY = "sl.B87DpLOrGdqq-YoWYFLTaetq-Z47JWVuEP4eZ5_LZHyTkFvN4OB4bPfAfpkWIhW4p7QfhFVqNlPpJqdytPcUu-9UxuCsDrD1X6RX_a9wE9Ud11uGny9v-LuB7VsLn6bfiWob0bhrMVwL2xA"
+dbx = dropbox.Dropbox(DROP_API_KEY)
 
 class Item(BaseModel):
     name: str
@@ -63,43 +66,66 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 #items
-@app.post("/items/", response_model=Item)
+@app.post("/items/")
 async def create_item(
     name: str = Form(...),
     description: str = Form(...),
-    price_per_day: condecimal(max_digits=10, decimal_places=2) = Form(...),
+    price_per_day: float = Form(...),
     owner_id: int = Form(...),
     file: UploadFile = File(...)
 ):
-    # 파일 타입 확인 (JPEG, PNG만 허용)
     if file.content_type not in ['image/jpeg', 'image/png']:
         raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG files are allowed.")
-
-    # 파일 내용 읽기 및 처리
     file_content = await file.read()
+    
+    if len(file_content) == 0:
+        return {"msg": "File was empty, post created without file"}
+    try:
+        folder_path = f'/{owner_id}-{file.filename}'
+            # Create folder if it doesn't exist
+        try:
+            dbx.files_get_metadata(folder_path)
+        except dropbox.exceptions.ApiError as e:
+            if e.error.is_path() and e.error.get_path().is_not_found():
+                dbx.files_create_folder_v2(folder_path)
+            else:
+                raise HTTPException(status_code=500, detail=f"Failed to check or create folder: {str(e)}")
+        file_path = f'{folder_path}/{file.filename}'
+        dbx.files_upload(file_content, file_path, mode=WriteMode("overwrite"))
+        link_response = dbx.sharing_create_shared_link_with_settings(file_path)
+        shared_link = link_response.url
+        image_url=shared_link
 
-    # imgbb로 파일 업로드
-    imgbb_url = "https://api.imgbb.com/1/upload"
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            imgbb_url,
-            params={"key": IMG_API_KEY},
-            files={"image": (file.filename, file_content, file.content_type)}
-        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"실패: {str(e)}")
+    
+    # 데이터베이스에 삽입 쿼리 작성
+    query = """
+    INSERT INTO items (owner_id, name, description, price_per_day, image_url, available)
+    VALUES (:owner_id, :name, :description, :price_per_day, :image_url, 1)
+    """
+    values = {
+        "owner_id": owner_id,
+        "name": name,
+        "description": description,
+        "price_per_day": price_per_day,
+        "image_url": image_url
+    }
 
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to upload image to imgbb")
+    # 데이터베이스에 쿼리 실행
+    try:
+        await database.execute(query=query, values=values)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to insert item into database. Error: " + str(e))
 
-    data = response.json()
-    image_url = data["data"]["url"]
-
-    # 데이터베이스에 저장
-    item_id = await crud.create_item(owner_id, name, description, price_per_day, image_url)
-
-    if item_id is None:
-        raise HTTPException(status_code=500, detail="Item ID was not generated correctly.")
-
-    return {"id": item_id, "name": name, "description": description, "price_per_day": price_per_day, "owner_id": owner_id, "image_url": image_url, "available": True}
+    return {
+        "name": name,
+        "description": description,
+        "price_per_day": price_per_day,
+        "owner_id": owner_id,
+        "image_url": image_url,
+        "available": True
+    }
 
 @app.get("/create_item")
 async def create_item_page(request: Request):
