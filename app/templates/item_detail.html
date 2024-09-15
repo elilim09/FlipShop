@@ -1,16 +1,137 @@
-<!-- item_detail.html -->
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-    <title>{{ item.name }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{%item.name%} - FlipShop</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background-color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .hashtag {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #4ade80;
+        }
+        main {
+            flex-grow: 1;
+            padding: 1rem;
+        }
+        .item-card {
+            background-color: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .item-image {
+            background-color: #e5e7eb;
+            height: 16rem;
+            width: 100%;
+        }
+        .item-details {
+            padding: 1rem;
+        }
+        .item-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .item-categories {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .category-tag {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+        }
+        .item-description {
+            color: #4b5563;
+            margin-bottom: 1rem;
+        }
+        .seller-info {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        footer {
+            background-color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bookmark-button {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #4b5563;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .contact-button {
+            background-color: #4ade80;
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <h1>{{ item.name }}</h1>
-    <img src="{{ item.image_url }}" alt="{{ item.name }}" style="max-width: 300px;">
-    <p>{{ item.description }}</p>
-    <p>Price per day: {{ item.price_per_day }}</p>
-    <button id="rent-button">Rent this item</button>
-    <script src="/app/static/scripts.js"></script>
-
+    <header>
+        <div class="hashtag">#</div>
+        <h1>{{item.name}}</h1>
+    </header>
+    
+    <main>
+        <div class="item-card">
+            <div class="item-image"><img src='{% item.image_url %}'></div>
+            <div class="item-details">
+                <h2 class="item-title">{%item.name%} : 가격</h2>
+                <div class="item-categories">
+                    <span class="category-tag">#상품카테고리</span>
+                    <span class="category-tag">#지역카테고리</span>
+                </div>
+                <p class="item-description">
+                    게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 
+                    게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명)
+                    게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명)
+                    게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명)
+                </p>
+                <div class="seller-info">
+                    판매자 : {%item.name%}
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <button class="bookmark-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+            </svg>
+            나중에 다시보기
+        </button>
+        <button class="contact-button">연락해보기</button>
+    </footer>
 </body>
 </html>

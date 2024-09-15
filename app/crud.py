@@ -25,7 +25,7 @@ async def create_item(_owner_id: int, _name: str, _description: str, _price_per_
     return result
 
 async def get_item(item_id: int):
-    query = select([items]).where(items.c.id == item_id)
+    query = select(items).where(items.c.id == item_id)
     result = await database.fetch_one(query)
     return result
 
@@ -42,6 +42,6 @@ async def create_rental(item_id: int, borrower_id: int, start_date: str, end_dat
     return result
 
 async def get_rental(rental_id: int):
-    query = select([rentals]).where(rentals.c.id == rental_id)
+    query = select(rentals).where(rentals.c.id == rental_id)
     result = await database.fetch_one(query)
     return result

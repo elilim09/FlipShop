@@ -12,7 +12,7 @@ import dropbox
 from dropbox.files import WriteMode
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 토큰 만료 시간 설정
-DROP_API_KEY = "sl.B87DpLOrGdqq-YoWYFLTaetq-Z47JWVuEP4eZ5_LZHyTkFvN4OB4bPfAfpkWIhW4p7QfhFVqNlPpJqdytPcUu-9UxuCsDrD1X6RX_a9wE9Ud11uGny9v-LuB7VsLn6bfiWob0bhrMVwL2xA"
+DROP_API_KEY = "sl.B87SbpSgnVCyaduD_4ZSKLLVKNlhTfYAtYlri9BT8XH2BUj4xfFYHJHMC3AlBrGbRZqbBN2VlRjd4DN2C-2O1R4Kq0xKZbDncE8c2ambgk3-W1NYU9qpPppCUYrMtLN4cFhe2739O3GPfoo"
 dbx = dropbox.Dropbox(DROP_API_KEY)
 
 class Item(BaseModel):
