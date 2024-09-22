@@ -1,32 +1,67 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile
+from sqlite3 import IntegrityError
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile,Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from datetime import timedelta
+from sqlalchemy.orm import sessionmaker, Session
 from app.database import database
 from app import crud
+from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, func
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
 from app.schemas import ItemCreate, Item, ItemBase
 from pydantic import BaseModel, condecimal
 import httpx
 import dropbox
 from dropbox.files import WriteMode
+from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ForeignKey, UniqueConstraint
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
+from app.models import users, items, rentals
+from app.database import database
+from sqlalchemy import insert, select
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 토큰 만료 시간 설정
-DROP_API_KEY = "sl.B87SbpSgnVCyaduD_4ZSKLLVKNlhTfYAtYlri9BT8XH2BUj4xfFYHJHMC3AlBrGbRZqbBN2VlRjd4DN2C-2O1R4Kq0xKZbDncE8c2ambgk3-W1NYU9qpPppCUYrMtLN4cFhe2739O3GPfoo"
+
+Base = declarative_base()
+
+ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정 #?
+DROP_API_KEY = "sl.B9UVoUUCgczXDyeiTYWdERugXMH-Ihlmi3su1oaKSMlUbvHlj5bPJpggQChSEQI88UbRwVixIFcsLjqczVL2uG-yqmeeXWnVGF5_g1Zy6JzTWT-3aHg4pCfmu79UpEeEAdANPmaBC5rOtck"
 dbx = dropbox.Dropbox(DROP_API_KEY)
-
+SQLALCHEMY_DATABASE_URL="mysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 class Item(BaseModel):
     name: str
     description: str
     price_per_day: condecimal(max_digits=10, decimal_places=2) # type: ignore
     owner_id: int
     image_url: str = None
+class UserCreateSchema(BaseModel):
+    username: str
+    password: str
+    confirm_password: str
 
+    def validate_passwords(self):
+        if self.password != self.confirm_password:
+            raise ValueError("Passwords do not match")
 
 templates = Jinja2Templates(directory="app/templates")
 app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+class UserModel(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    password = Column(String)
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @app.on_event("startup")
 async def startup():
@@ -35,6 +70,94 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
+
+@app.get("/")
+async def read_root():
+    return {"message": "Welcome to FlipShop API"}
+
+@app.get("/login")
+async def login(request: Request):
+    return templates.TemplateResponse("login.html", {'request': request})
+@app.get("/signup")
+async def signup(request: Request):
+    return templates.TemplateResponse("signup.html", {'request': request})
+@app.post("/login")
+async def postlogin(
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+    
+    ):
+    user = db.query(UserModel).filter(
+        (UserModel.username == form_data.username)
+    ).first()
+
+    if not user or not verify_password(form_data.password, user.password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={
+            "sub": user.email,
+            "username": user.username,
+        },
+        expires_delta=access_token_expires
+    )
+    
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        max_age=access_token_expires,
+        expires=access_token_expires,
+        secure=True,  # HTTPS가 아닌 경우 False로 설정
+        samesite="Strict"  # 필요에 따라 조정
+    )
+
+    return {"msg": "Login successful"}
+
+@app.post("/signup")
+async def postsignup(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # 사용자 등록 데이터 검증
+    user_data = UserCreateSchema(
+        username=username,
+        password=password,
+        confirm_password=confirm_password
+    )
+
+    # 비밀번호 검증
+    try:
+        user_data.validate_passwords()
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    # 중복된 사용자 확인
+    existing_username = db.query(UserModel).filter(UserModel.username == user_data.username).first()
+    if existing_username:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nickname already registered")
+    # 사용자 생성
+    hashed_password = get_password_hash(user_data.password)
+    db_user = UserModel(
+        username=user_data.username,
+        password=hashed_password
+    )
+
+    try:
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database integrity error")
+
+    return templates.TemplateResponse("login.html", {"request": request})
+    
 
 @app.get("/")
 async def read_root():
@@ -95,6 +218,8 @@ async def create_item(
         link_response = dbx.sharing_create_shared_link_with_settings(file_path)
         shared_link = link_response.url
         image_url=shared_link
+        image_url = shared_link.replace("dl=0", "raw=1")
+
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"실패: {str(e)}")
@@ -133,9 +258,9 @@ async def create_item_page(request: Request):
 
 @app.get("/items/{item_id}")
 async def read_item(item_id: int, request: Request):
-    item = await crud.get_item(item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+    query = select(items).where(items.c.id == item_id)
+    item = await database.fetch_one(query)
+    print(item.image_url)
     return templates.TemplateResponse("item_detail.html", {"request": request, "item": item})
 
 # Rentals

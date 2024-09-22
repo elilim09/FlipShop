@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{%item.name%} - FlipShop</title>
+    <title>{{item.name}} - FlipShop</title>
     <style>
         body, html {
             margin: 0;
@@ -14,12 +14,24 @@
             display: flex;
             flex-direction: column;
         }
-        header {
-            background-color: white;
-            padding: 1rem;
+        .header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-color: #F5F5F5;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .header img {
+            height: 50px;
+            margin-right: 10px;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
         }
         .hashtag {
             font-size: 1.5rem;
@@ -97,28 +109,25 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="hashtag">#</div>
-        <h1>{{item.name}}</h1>
-    </header>
+    <div class="header">
+        <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
+        <h1>FlipShop</h1>
+    </div>
     
     <main>
         <div class="item-card">
-            <div class="item-image"><img src='{% item.image_url %}'></div>
+            <div class="item-image"><img src='{{ item.image_url }}'></div>
             <div class="item-details">
-                <h2 class="item-title">{%item.name%} : 가격</h2>
+                <h2 class="item-title">{{ item.name }} : 가격</h2>
                 <div class="item-categories">
                     <span class="category-tag">#상품카테고리</span>
                     <span class="category-tag">#지역카테고리</span>
                 </div>
                 <p class="item-description">
-                    게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 
-                    게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명)
-                    게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명)
-                    게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명) 게시글(상품 설명)
+                    {{item.description}}
                 </p>
                 <div class="seller-info">
-                    판매자 : {%item.name%}
+                    판매자 : {{item.name}}
                 </div>
             </div>
         </div>

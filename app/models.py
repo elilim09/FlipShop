@@ -17,12 +17,12 @@ items = Table(
     "items",
     Base.metadata,
     Column("id", Integer, primary_key=True, index=True),
-    Column("owner_id", Integer, ForeignKey("users.id")),
     Column("name", String, index=True),
     Column("description", String),
+    Column("owner_id", Integer, ForeignKey("users.id")),
     Column("price_per_day", Float),
-    Column("image_url", String),
     Column("available", Boolean, default=True),
+    Column("image_url", String)
 )
 
 rentals = Table(
