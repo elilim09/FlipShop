@@ -6,7 +6,7 @@ from datetime import timedelta, datetime
 from sqlalchemy.orm import sessionmaker, Session
 from app.database import database
 from app import crud
-from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, func, Date
+from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, func, DateTime
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
 from app.schemas import ItemCreate, Item, ItemBase
 from pydantic import BaseModel, condecimal
@@ -25,7 +25,7 @@ from sqlalchemy import insert, select
 Base = declarative_base()
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정 #?
-DROP_API_KEY = "sl.B9wbi1WlVdkFFuYHMQE0OZtotwYVTYLqm44IvZxIRCFTp4TN1JxL5o1kcrJIAhqWzxlxFOnwZIxiGOFjksfZy4j7Z8LER2OobNhcVyGLL7QW8DhZOn3rj5lmEej11GXn-uLcvAB6E5Qml6o"
+DROP_API_KEY = "sl.B-OF0uu4qYLeejDNrQPpo14U9Sgl3aY26hRZKMd_kxWRhFupaV9X1J1KoCwI8Dv6i7pOIwVQ_XAyQtlpSt1n83C35xzDP6TVBqSdBDJ_y0_LEMdmsq7RTKpfPGIB_DuOOZnFALLL3yRnQFw"
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL="mysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -198,7 +198,7 @@ async def create_item(
     owner_id: int = Form(...),
     file: UploadFile = File(...)
 ):
-    item_date = datetime.utcnow().date()
+    item_date = datetime.utcnow()
 
     if file.content_type not in ['image/jpeg', 'image/png']:
         raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG files are allowed.")

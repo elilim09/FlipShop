@@ -1,5 +1,5 @@
 # app/models.py
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, Boolean, Float, Date
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, Boolean, Float, DateTime
 from app.database import metadata
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -23,7 +23,7 @@ items = Table(
     Column("price_per_day", Float),
     Column("available", Boolean, default=True),
     Column("image_url", String),
-    Column("item_date", Date)
+    Column("item_date", DateTime)
 )
 
 rentals = Table(
@@ -32,7 +32,7 @@ rentals = Table(
     Column("id", Integer, primary_key=True),
     Column("item_id", Integer, ForeignKey("items.id")),
     Column("borrower_id", Integer, ForeignKey("users.id")),
-    Column("start_date", Date),
-    Column("end_date", Date),
+    Column("start_date", DateTime),
+    Column("end_date", DateTime),
     Column("total_price", Float),
 )
