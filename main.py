@@ -24,8 +24,8 @@ from sqlalchemy import insert, select, desc
 
 Base = declarative_base()
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정 #?
-DROP_API_KEY = "sl.B-OF0uu4qYLeejDNrQPpo14U9Sgl3aY26hRZKMd_kxWRhFupaV9X1J1KoCwI8Dv6i7pOIwVQ_XAyQtlpSt1n83C35xzDP6TVBqSdBDJ_y0_LEMdmsq7RTKpfPGIB_DuOOZnFALLL3yRnQFw"
+ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
+DROP_API_KEY = "sl.B-OatjwaPqfqsC_azcpc3Xko4AzbJJc7cL_PImJM-wJ8g0eyrPNhYILuF_Aa_4IuMNYOnm8mwftM5qJznK64vX1Nb1ANcuTUSH_tVvN8pk0_PCLKPt-tnK4Ni45tr6OABplv9dDicfeoPBFpJ9YCGBM"
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL="mysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -36,6 +36,7 @@ class Item(BaseModel):
     price_per_day: condecimal(max_digits=10, decimal_places=2) # type: ignore
     owner_id: int
     image_url: str = None
+    category: str
 class UserCreateSchema(BaseModel):
     username: str
     password: str
@@ -89,7 +90,6 @@ async def postlogin(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
-    
     ):
     user = db.query(UserModel).filter(
         (UserModel.username == form_data.username)
@@ -101,7 +101,7 @@ async def postlogin(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
-            "sub": user.email,
+            "sub": user.username,
             "username": user.username,
         },
         expires_delta=access_token_expires
@@ -195,6 +195,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 @app.post("/items/")
 async def create_item(
     name: str = Form(...),
+    category: str = Form(...),
     description: str = Form(...),
     price_per_day: float = Form(...),
     owner_id: int = Form(...),
@@ -231,12 +232,13 @@ async def create_item(
     
     # 데이터베이스에 삽입 쿼리 작성
     query = """
-    INSERT INTO items (owner_id, name, description, price_per_day, image_url, available, item_date)
-    VALUES (:owner_id, :name, :description, :price_per_day, :image_url, 1, :item_date)
+    INSERT INTO items (owner_id, name, category, description, price_per_day, image_url, available, item_date)
+    VALUES (:owner_id, :name, :category, :description, :price_per_day, :image_url, 1, :item_date)
     """
     values = {
         "owner_id": owner_id,
         "name": name,
+        "category": category,
         "description": description,
         "price_per_day": price_per_day,
         "image_url": image_url,
@@ -251,6 +253,7 @@ async def create_item(
 
     return {
         "name": name,
+        "category": category,
         "description": description,
         "price_per_day": price_per_day,
         "owner_id": owner_id,
@@ -261,23 +264,3 @@ async def create_item(
 @app.get("/create_item")
 async def create_item_page(request: Request):
     return templates.TemplateResponse("create_item.html", {'request': request})
-
-@app.get("/items/{item_id}")
-async def read_item(item_id: int, request: Request):
-    query = select(items).where(items.c.id == item_id)
-    item = await database.fetch_one(query)
-    print(item.image_url)
-    return templates.TemplateResponse("item_detail.html", {"request": request, "item": item})
-
-# Rentals
-@app.post("/rentals/", response_model=dict)
-async def create_rental(item_id: int, borrower_id: int, start_date: str, end_date: str, total_price: float):
-    await crud.create_rental(item_id, borrower_id, start_date, end_date, total_price)
-    return {"item_id": item_id}
-
-@app.get("/rentals/{rental_id}", response_model=dict)
-async def read_rental(rental_id: int):
-    rental = await crud.get_rental(rental_id)
-    if not rental:
-        raise HTTPException(status_code=404, detail="Rental not found")
-    return rental
