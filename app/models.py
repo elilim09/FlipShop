@@ -22,7 +22,8 @@ items = Table(
     Column("owner_id", Integer, ForeignKey("users.id")),
     Column("price_per_day", Float),
     Column("available", Boolean, default=True),
-    Column("image_url", String)
+    Column("image_url", String),
+    Column("item_date", Date)
 )
 
 rentals = Table(

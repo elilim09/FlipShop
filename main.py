@@ -2,11 +2,11 @@ from sqlite3 import IntegrityError
 from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile,Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
-from datetime import timedelta
+from datetime import timedelta, datetime
 from sqlalchemy.orm import sessionmaker, Session
 from app.database import database
 from app import crud
-from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, func
+from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, func, Date
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
 from app.schemas import ItemCreate, Item, ItemBase
 from pydantic import BaseModel, condecimal
@@ -25,7 +25,7 @@ from sqlalchemy import insert, select
 Base = declarative_base()
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정 #?
-DROP_API_KEY = "sl.B9UVoUUCgczXDyeiTYWdERugXMH-Ihlmi3su1oaKSMlUbvHlj5bPJpggQChSEQI88UbRwVixIFcsLjqczVL2uG-yqmeeXWnVGF5_g1Zy6JzTWT-3aHg4pCfmu79UpEeEAdANPmaBC5rOtck"
+DROP_API_KEY = "sl.B9wbi1WlVdkFFuYHMQE0OZtotwYVTYLqm44IvZxIRCFTp4TN1JxL5o1kcrJIAhqWzxlxFOnwZIxiGOFjksfZy4j7Z8LER2OobNhcVyGLL7QW8DhZOn3rj5lmEej11GXn-uLcvAB6E5Qml6o"
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL="mysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -72,8 +72,9 @@ async def shutdown():
     await database.disconnect()
 
 @app.get("/")
-async def read_root():
-    return {"message": "Welcome to FlipShop API"}
+@app.get("/index")
+async def home(request: Request):
+    return templates.TemplateResponse("home.html", {'request': request})
 
 @app.get("/login")
 async def login(request: Request):
@@ -197,6 +198,8 @@ async def create_item(
     owner_id: int = Form(...),
     file: UploadFile = File(...)
 ):
+    item_date = datetime.utcnow().date()
+
     if file.content_type not in ['image/jpeg', 'image/png']:
         raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG files are allowed.")
     file_content = await file.read()
@@ -226,15 +229,16 @@ async def create_item(
     
     # 데이터베이스에 삽입 쿼리 작성
     query = """
-    INSERT INTO items (owner_id, name, description, price_per_day, image_url, available)
-    VALUES (:owner_id, :name, :description, :price_per_day, :image_url, 1)
+    INSERT INTO items (owner_id, name, description, price_per_day, image_url, available, item_date)
+    VALUES (:owner_id, :name, :description, :price_per_day, :image_url, 1, :item_date)
     """
     values = {
         "owner_id": owner_id,
         "name": name,
         "description": description,
         "price_per_day": price_per_day,
-        "image_url": image_url
+        "image_url": image_url,
+        "item_date": item_date
     }
 
     # 데이터베이스에 쿼리 실행

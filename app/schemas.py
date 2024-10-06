@@ -1,12 +1,13 @@
-# app/schemas.py
+from datetime import date
 from pydantic import BaseModel, Field, condecimal
 
 class ItemBase(BaseModel):
     name: str
     description: str
-    price_per_day: condecimal(max_digits=10, decimal_places=2) # type: ignore
+    price_per_day: condecimal(max_digits=10, decimal_places=2)  # type: ignore
     owner_id: int
-    
+    item_date: date
+
 class ItemCreate(ItemBase):
     image_url: str
 
