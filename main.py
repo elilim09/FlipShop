@@ -19,7 +19,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.models import users, items, rentals
 from app.database import database
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, desc
 
 
 Base = declarative_base()
@@ -74,7 +74,9 @@ async def shutdown():
 @app.get("/")
 @app.get("/index")
 async def home(request: Request):
-    return templates.TemplateResponse("home.html", {'request': request})
+    query = select(items).order_by(desc(items.c.item_date))
+    result = await database.fetch_all(query)
+    return templates.TemplateResponse("home.html", {'request': request, 'items': result})
 
 @app.get("/login")
 async def login(request: Request):

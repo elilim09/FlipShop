@@ -116,7 +116,7 @@
     
     <main>
         <div class="item-card">
-            <div class="item-image"><img src='{{ item.image_url }}'></div>
+            <div class="item-image"><img src='{{ item.image_url }}' alt="{{ item.name }} 이미지"></div>
             <div class="item-details">
                 <h2 class="item-title">{{ item.name }} : 가격</h2>
                 <div class="item-categories">
@@ -127,7 +127,7 @@
                     {{item.description}}
                 </p>
                 <div class="seller-info">
-                    판매자 : {{item.name}}
+                    판매자 : {{item.owner_name}}
                 </div>
             </div>
         </div>
