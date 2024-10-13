@@ -50,7 +50,7 @@
         }
         .item-image {
             background-color: #e5e7eb;
-            height: 16rem;
+            display: inline-block; /* 컨테이너가 이미지 크기에 맞게 조정되도록 설정 */
             width: 100%;
         }
         .item-details {
@@ -116,12 +116,14 @@
     
     <main>
         <div class="item-card">
-            <div class="item-image"><img src='{{ item.image_url }}' alt="{{ item.name }} 이미지"></div>
+            <div class="item-image">
+                <img src='{{ item.image_url }}' alt="{{ item.name }} 이미지" style="object-fit: contain; width: 100%; height: auto; max-width: 100%; max-height: 400px;">
+            </div>
             <div class="item-details">
                 <h2 class="item-title">{{ item.name }} : 가격</h2>
                 <div class="item-categories">
-                    <span class="category-tag">#상품카테고리</span>
-                    <span class="category-tag">#지역카테고리</span>
+                    <span class="category-tag">#{{ item.category }}</span>
+                    <span class="category-tag">#{{ item.local_category }}</span>
                 </div>
                 <p class="item-description">
                     {{item.description}}

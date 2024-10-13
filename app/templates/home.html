@@ -1,147 +1,176 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FlipShop</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #00FFB2;
+            --secondary-color: #F5A623;
+            --background-color: #F8F9FA;
+            --text-color: #333333;
+            --light-gray: #e9efed;
+        }
+        
         body {
             font-family: 'Montserrat', Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
-            overflow-x: hidden;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
+        
         .header {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 15px;
             background-color: #ffffff;
-            border-bottom: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
         }
+        
         .header img {
-            height: 50px;
+            height: 40px;
             margin-right: 10px;
         }
+        
         .header h1 {
             font-size: 24px;
             margin: 0;
+            color: #000000;
         }
+        
         .nav {
             display: flex;
             justify-content: center;
-            padding: 10px;
+            padding: 15px;
             background-color: #ffffff;
             position: sticky;
             top: 70px;
-            z-index: 1000;
+            z-index: 999;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
+        
         .nav-stack {
-            background-color: #eeeeee;
+            background-color: var(--light-gray);
             border-radius: 30px;
             display: flex;
             padding: 5px;
-            width: 220px;
-            height: 50px;
+            width: 240px;
         }
+        
         .nav button {
             border: none;
-            border-radius: 30px;
-            background-color: #b5b5b5;
+            border-radius: 25px;
+            background-color: transparent;
             padding: 10px 20px;
             margin: 0 5px;
             cursor: pointer;
             font-size: 16px;
             font-weight: 700;
-            color: #000;
-            transition: background-color 0.3s;
-            height: 50px;
+            color: var(--text-color);
+            transition: all 0.3s ease;
             flex: 1;
         }
+        
         .nav button.active {
             background-color: #333333;
-            color: #fff;
+            color: #ffffff;
         }
-        .nav button:hover {
-            background-color: #777777;
+        
+        .nav button:hover:not(.active) {
+            background-color: rgba(74, 144, 226, 0.1);
         }
+        
         .tags {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
             padding: 20px;
             background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
+        
         .tags div {
-            background-color: #ddd;
-            padding: 10px 20px;
+            padding: 8px 16px;
             margin: 5px;
-            border-radius: 30px;
+            border-radius: 20px;
             cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-size: 14px;
         }
+        
+        .tags div:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
         .tags .blue { background-color: #A9D6FF; }
         .tags .orange { background-color: #FFC8A9; }
         .tags .purple { background-color: #D4A9FF; }
         .tags .yellow { background-color: #FFECA9; }
         .tags .green { background-color: #A9FFAC; }
-        .tags .red { background-color: #A9BCFF; }
-        .tags .lightblue { background-color: #FFA9A9; }
+        .tags .red { background-color: #FFA9A9; }
+        .tags .lightblue { background-color: #A9BCFF; }
+        
         .product-list {
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
+        
         .product {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            width: 80%;
-            max-width: 600px;
-        }
-        .product img {
-            width: 100px;
-            height: 100px;
-            background-color: #ddd;
-            margin-right: 20px;
+            background-color: #ffffff;
             border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+        
+        .product:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .product img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
         .product .details {
-            flex-grow: 1;
+            padding: 15px;
         }
+        
         .product .details h2 {
             font-size: 18px;
-            margin: 0;
+            margin: 0 0 10px 0;
         }
+        
         .product .details p {
             color: #777;
             margin: 5px 0;
+            font-size: 14px;
         }
+        
         .product .details .price {
-            color: #000;
+            color: var(--secondary-color);
             font-weight: bold;
+            font-size: 18px;
+            margin-top: 10px;
         }
-        @media (min-width: 768px) {
+        
+        @media (max-width: 768px) {
             .product-list {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 20px;
-                justify-items: center;
-            }
-            .product {
-                width: auto;
-                max-width: none;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .product img {
-                margin-bottom: 10px;
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             }
         }
     </style>
@@ -167,37 +196,20 @@
         <div class="lightblue">#책</div>
         <div class="lightblue">+더보기</div>
     </div>
+    
     <div class="product-list">
-        <div class="product">
-            <img src="https://via.placeholder.com/100" alt="상품 이미지">
-            <div class="details">
-                <h2>상품명</h2>
-                <p>#상품카테고리 | 지역카테고리</p>
-                <p class="price">10,000원</p>
-            </div>
-        </div>
-        <div class="product">
-            <img src="https://via.placeholder.com/100" alt="상품 이미지">
-            <div class="details">
-                <h2>상품명</h2>
-                <p>#상품카테고리 | 지역카테고리</p>
-                <p class="price">10,000원</p>
-            </div>
-        </div>
-        <div class="product">
-            <img src="https://via.placeholder.com/100" alt="상품 이미지">
-            <div class="details">
-                <h2>상품명</h2>
-                <p>#상품카테고리 | 지역카테고리</p>
-                <p class="price">10,000원</p>
-            </div>
-        </div>
-    </div>
-    <h1>Items</h1>
-    <ul>
         {% for item in items %}
-            <li>{{ item.id }}: {{ item.item_date }}</li>
+        <div class="product">
+            <a href="/items/{{ item.id }}">
+            <img src="{{ item.image_url }}" alt="{{ item.name }}">
+            <div class="details">
+                <h2>{{ item.name }}</h2>
+                <p>#{{ item.category }} | {{ item.local_category }}</p>
+                <p class="price">{{ item.price_per_day }}원 / 일</p>
+            </div>
+            </a>
+        </div>
         {% endfor %}
-    </ul>
+    </div>
 </body>
 </html>

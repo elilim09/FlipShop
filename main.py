@@ -25,7 +25,7 @@ from sqlalchemy import insert, select, desc
 Base = declarative_base()
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
-DROP_API_KEY = "sl.B-OatjwaPqfqsC_azcpc3Xko4AzbJJc7cL_PImJM-wJ8g0eyrPNhYILuF_Aa_4IuMNYOnm8mwftM5qJznK64vX1Nb1ANcuTUSH_tVvN8pk0_PCLKPt-tnK4Ni45tr6OABplv9dDicfeoPBFpJ9YCGBM"
+DROP_API_KEY = "sl.B-r4vU7LPBpj-Ww-tUC3cD8L-8fz4Ea-JAW7r_GAq4zMVe8Ffp7ez3xmmGTHxI-X8o0xuUknvi9aqUy8nsPYB0us4Gq8wpTjpuzNYwhUUA4WCGJnNOQYtoaaepPP9QLy1fljTDZWdrJdIwJESb2HepY"
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL="mysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -161,11 +161,6 @@ async def postsignup(
 
     return templates.TemplateResponse("login.html", {"request": request})
     
-
-@app.get("/")
-async def read_root():
-    return {"message": "Welcome to FlipShop API"}
-
 # Users
 @app.post("/users/", response_model=dict)
 async def create_user(username: str, password: str):
@@ -192,7 +187,11 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 #items
-@app.post("/items/")
+@app.get("/create_item")
+async def create_item_page(request: Request):
+    return templates.TemplateResponse("create_item.html", {'request': request})
+
+@app.post("/create_item/")
 async def create_item(
     name: str = Form(...),
     category: str = Form(...),
@@ -261,6 +260,10 @@ async def create_item(
         "available": True
     }
 
-@app.get("/create_item")
-async def create_item_page(request: Request):
-    return templates.TemplateResponse("create_item.html", {'request': request})
+@app.get("/items/{item_id}")
+async def item_detail(item_id: int, request: Request):
+    query = select(items).where(items.c.id == item_id)
+    item = await database.fetch_one(query)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return templates.TemplateResponse("item_detail.html", {"request": request, "item": item})
