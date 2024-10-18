@@ -1,0 +1,211 @@
+<!-- signup페이지 후보 -->
+<!-- Claude의 베이스 코드, 일부 항목 수정함 -->
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to FlipShop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .background-color {
+            position: fixed;
+            bottom: -20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200vw;
+            height: 200vw;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00FFB2, #627EFF);
+            filter: blur(150px);
+            z-index: -1;
+            opacity: 0.5;
+            animation: pulse 10s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); }
+            100% { transform: translateX(-50%) scale(1.1); }
+        }
+
+        .wrapper {
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header img {
+            height: 30px;
+            margin-right: 10px;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .title {
+            color: #333;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .sign-container {
+            margin: 1.5rem 0;
+        }
+
+        .sub-title {
+            color: #555;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .textbox {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 25px;
+            border: 2px solid #ddd;
+            background: #fff;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .textbox:focus {
+            outline: none;
+            border-color: #627EFF;
+            box-shadow: 0 0 0 3px rgba(98, 126, 255, 0.2);
+        }
+
+        .next {
+            width: 100%;
+            margin-top: 20px;
+            padding: 12px 30px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #627EFF, #00FFB2);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(98, 126, 255, 0.3);
+        }
+
+        .next:hover, .next:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(98, 126, 255, 0.4);
+        }
+
+        .footer-section {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .footer-section p {
+            margin-bottom: 10px;
+        }
+
+        .footer-section img {
+            height: 30px;
+            transition: transform 0.3s ease;
+        }
+
+        .footer-section img:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 480px) {
+            .wrapper {
+                padding: 1.5rem;
+                width: 95%;
+            }
+
+            .title {
+                font-size: 22px;
+            }
+
+            .sub-title {
+                font-size: 15px;
+            }
+
+            .textbox, .next {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .wrapper {
+                padding: 1rem;
+            }
+
+            .header {
+                margin-bottom: 1rem;
+            }
+
+            .title {
+                margin-bottom: 1rem;
+            }
+
+            .sign-container {
+                margin: 1rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-color"></div>
+
+    <div class="wrapper">
+        <div class="header">
+            <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
+            <h1>FlipShop</h1>
+        </div>
+
+        <h2 class="title">Welcome</h2>
+        <div class="sign-container">
+            <h3 class="sub-title">Sign up</h3>
+            <input type="text" class="textbox" placeholder="Enter your ID">
+            <button class="next">Next →</button>
+        </div>
+
+        <footer class="footer-section">
+            <p>sign up with</p>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png" alt="Google Logo" class="google-logo">
+        </footer>
+    </div>
+</body>
+</html>

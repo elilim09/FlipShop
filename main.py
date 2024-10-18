@@ -84,7 +84,7 @@ async def login(request: Request):
     return templates.TemplateResponse("login.html", {'request': request})
 @app.get("/signup")
 async def signup(request: Request):
-    return templates.TemplateResponse("signup.html", {'request': request})
+    return templates.TemplateResponse("signup ver2.html", {'request': request})
 @app.post("/login")
 async def postlogin(
     response: Response,

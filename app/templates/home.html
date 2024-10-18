@@ -26,7 +26,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 15px;
             background-color: #ffffff;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             position: sticky;
@@ -200,7 +199,7 @@
     <div class="product-list">
         {% for item in items %}
         <div class="product">
-            <a href="/items/{{ item.id }}">
+            <a href="/items/{{ item.id }}" style="text-decoration: none;">
             <img src="{{ item.image_url }}" alt="{{ item.name }}">
             <div class="details">
                 <h2>{{ item.name }}</h2>

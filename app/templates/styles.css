@@ -1,0 +1,131 @@
+/* styles.css - Signup 페이지 전용 스타일 */
+
+/* 전체 배경 색상과 텍스트 데코레이션 설정 */
+body {
+    background-color: #F5F5F5;
+    text-decoration: none;
+    font-family: 'Montserrat', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;  /* 수평 가운데 정렬 */
+    align-items: center;  /* 수직 가운데 정렬 */
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* wrapper 스타일 - 페이지 내용을 화면 중앙에 정렬 */
+.wrapper {
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    position: relative;
+}
+
+/* 헤더 스타일 */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-color: #F5F5F5;
+    border-bottom: 1px solid #ddd;
+    position: fixed; /* 최상단 고정 */
+    top: 0;
+    left: 0;
+    width: 100%; /* 화면 가로를 모두 차지 */
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 가벼운 그림자 추가 */
+}
+.header img {
+    height: 50px;
+    margin-right: 10px;
+}
+.header h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+/* 제목 스타일 */
+.title {
+    color: #000;
+    text-align: center;
+    font-size: 30px;
+    font-weight: 900;
+    line-height: normal;
+}
+
+/* 서브 제목 스타일 */
+.sub-title {
+    color: #000;
+    text-align: center;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: normal;
+}
+
+/* 회원가입 컨테이너 스타일 */
+.sign-container {
+    width: 60%;
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 40px;
+    border: 1px solid #C4C4C4;
+    background: #EBEBEB;
+    text-align: center;
+}
+
+/* 입력 박스 스타일 */
+.sign-container .textbox {
+    width: 80%;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 10px;
+    background: #D9D9D9;
+    border: none;
+}
+
+/* 다음 버튼 스타일 */
+.sign-container .next {
+    margin-top: 20px;
+    padding: 10px 20px;
+    border-radius: 86px;
+    background: #626CFF;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+.sign-container .next:hover {
+    background: #4a4fcf;
+}
+
+/* 푸터 섹션 스타일 */
+.footer-section {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+}
+.footer-section img {
+    height: 30px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+/* 배경 색상 효과 스타일 */
+.background-color {
+    position: fixed;
+    bottom: -200px;  /* 화면 하단에 좀 더 아래로 설정함 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;  /* 배경 크기 확대 */
+    height: 800px;  /* 배경 크기 확대 */
+    border-radius: 50%;
+    background: #00FFB2;
+    filter: blur(150px);
+    z-index: -1;
+}
