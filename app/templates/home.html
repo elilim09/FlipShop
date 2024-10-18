@@ -26,6 +26,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 15px;
             background-color: #ffffff;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             position: sticky;
@@ -173,6 +174,99 @@
             }
         }
     </style>
+
+<!-- 백엔드 연결 JS -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const step1 = document.getElementById('step1');
+        const step2 = document.getElementById('step2');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        const userIdInput = document.getElementById('userIdInput');
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirmPassword');
+        const successMessage = document.getElementById('successMessage');
+        const progressBar = document.getElementById('progressBar');
+        const titleText = document.getElementById('titleText');
+        const greetingText = document.getElementById('greetingText');
+        const userIdSpan = document.getElementById('userId');
+        const footerSection = document.querySelector('.footer-section');
+
+        nextBtn.addEventListener('click', function() {
+            if (userIdInput.value.trim() !== '') {
+                step1.classList.add('slide-to-left');
+                titleText.classList.add('slide-to-left');
+                setTimeout(() => {
+                    step1.classList.add('hidden');
+                    titleText.classList.add('hidden');
+                    step2.classList.remove('hidden');
+                    step2.classList.add('slide-from-right');
+                    greetingText.classList.remove('hidden');
+                    greetingText.classList.add('show');
+                    userIdSpan.textContent = userIdInput.value.trim();
+                    progressBar.style.width = '50%';
+                }, 500);
+            } else {
+                alert('아이디를 입력해주세요.');
+            }
+        });
+
+        submitBtn.addEventListener('click', function() {
+            if (password.value === '' || confirmPassword.value === '') {
+                alert('비밀번호를 입력해주세요.');
+            } else if (password.value !== confirmPassword.value) {
+                alert('비밀번호가 일치하지 않습니다.');
+            } else {
+                // 백엔드로 회원가입 데이터 전송
+                fetch('/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        'username': userIdInput.value.trim(),
+                        'password': password.value,
+                        'confirm_password': confirmPassword.value
+                    })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // 회원가입 성공 시
+                        step2.classList.add('slide-to-left');
+                        greetingText.classList.add('slide-to-left');
+                        setTimeout(() => {
+                            step2.classList.add('hidden');
+                            greetingText.classList.add('hidden');
+                            successMessage.classList.remove('hidden');
+                            successMessage.classList.add('show');
+                            progressBar.style.width = '100%';
+                            footerSection.classList.add('hidden');
+                        }, 500);
+                    } else {
+                        // 회원가입 실패 시
+                        response.json().then(data => {
+                            alert('회원가입 실패: ' + data.detail);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('회원가입 중 오류가 발생했습니다.');
+                });
+            }
+        });
+
+        // 입력 필드에 포커스가 갈 때 부드러운 스크롤 적용
+        const inputs = document.querySelectorAll('.textbox');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            });
+        });
+    });
+</script>
 </head>
 <body>
     <div class="header">

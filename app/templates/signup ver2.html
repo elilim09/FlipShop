@@ -1,6 +1,4 @@
-<!-- signup페이지 후보 -->
-<!-- Claude의 베이스 코드, 일부 항목 수정함 -->
-
+<!-- signup ver2.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -51,8 +49,10 @@
             text-align: center;
             background-color: rgba(255, 255, 255, 0.9);
             padding: 2rem;
-            border-radius: 40px;
+            border-radius: 30px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
         }
 
         .header {
@@ -80,8 +80,24 @@
             margin-bottom: 1.5rem;
         }
 
+        .greeting {
+            color: #333;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .greeting.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         .sign-container {
             margin: 1.5rem 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
         }
 
         .sub-title {
@@ -108,7 +124,7 @@
             box-shadow: 0 0 0 3px rgba(98, 126, 255, 0.2);
         }
 
-        .next {
+        .next, .submit {
             width: 100%;
             margin-top: 20px;
             padding: 12px 30px;
@@ -123,7 +139,7 @@
             box-shadow: 0 4px 15px rgba(98, 126, 255, 0.3);
         }
 
-        .next:hover, .next:focus {
+        .next:hover, .next:focus, .submit:hover, .submit:focus {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(98, 126, 255, 0.4);
         }
@@ -148,13 +164,68 @@
             transform: scale(1.1);
         }
 
+        .hidden {
+            display: none;
+        }
+
+        .success-message {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .success-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #ddd;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        .progress {
+            width: 0;
+            height: 100%;
+            background: linear-gradient(135deg, #627EFF, #00FFB2);
+            transition: width 0.5s ease;
+        }
+
+        @keyframes slideFromRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideToLeft {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-100%); opacity: 0; }
+        }
+
+        .slide-from-right {
+            animation: slideFromRight 0.5s forwards;
+        }
+
+        .slide-to-left {
+            animation: slideToLeft 0.5s forwards;
+        }
+
         @media (max-width: 480px) {
             .wrapper {
                 padding: 1.5rem;
                 width: 95%;
             }
 
-            .title {
+            .title, .greeting {
                 font-size: 22px;
             }
 
@@ -162,7 +233,7 @@
                 font-size: 15px;
             }
 
-            .textbox, .next {
+            .textbox, .next, .submit {
                 font-size: 14px;
             }
         }
@@ -176,7 +247,7 @@
                 margin-bottom: 1rem;
             }
 
-            .title {
+            .title, .greeting {
                 margin-bottom: 1rem;
             }
 
@@ -195,17 +266,99 @@
             <h1>FlipShop</h1>
         </div>
 
-        <h2 class="title">Welcome</h2>
-        <div class="sign-container">
+        <h2 id="titleText" class="title">Welcome</h2>
+        <h2 id="greetingText" class="greeting hidden">Hi,<br><span id="userId"></span>!</h2>
+        <div id="step1" class="sign-container">
             <h3 class="sub-title">Sign up</h3>
-            <input type="text" class="textbox" placeholder="Enter your ID">
-            <button class="next">Next →</button>
+            <input type="text" id="userIdInput" class="textbox" placeholder="Enter your ID">
+            <button id="nextBtn" class="next">Next →</button>
+        </div>
+
+        <div id="step2" class="sign-container hidden">
+            <h3 class="sub-title">Create Password</h3>
+            <input type="password" id="password" class="textbox" placeholder="Enter your password">
+            <input type="password" id="confirmPassword" class="textbox" placeholder="Confirm your password">
+            <button id="submitBtn" class="submit">Sign Up</button>
+        </div>
+
+        <div id="successMessage" class="success-message hidden">
+            You're in!
+            Welcome to the flipside.
         </div>
 
         <footer class="footer-section">
             <p>sign up with</p>
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png" alt="Google Logo" class="google-logo">
         </footer>
+
+        <div class="progress-bar">
+            <div class="progress" id="progressBar"></div>
+        </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const userIdInput = document.getElementById('userIdInput');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+            const successMessage = document.getElementById('successMessage');
+            const progressBar = document.getElementById('progressBar');
+            const titleText = document.getElementById('titleText');
+            const greetingText = document.getElementById('greetingText');
+            const userIdSpan = document.getElementById('userId');
+            const footerSection = document.querySelector('.footer-section');
+
+            nextBtn.addEventListener('click', function() {
+                if (userIdInput.value.trim() !== '') {
+                    step1.classList.add('slide-to-left');
+                    titleText.classList.add('slide-to-left');
+                    setTimeout(() => {
+                        step1.classList.add('hidden');
+                        titleText.classList.add('hidden');
+                        step2.classList.remove('hidden');
+                        step2.classList.add('slide-from-right');
+                        greetingText.classList.remove('hidden');
+                        greetingText.classList.add('show');
+                        userIdSpan.textContent = userIdInput.value.trim();
+                        progressBar.style.width = '50%';
+                    }, 500);
+                } else {
+                    alert('아이디를 입력해주세요.');
+                }
+            });
+
+            submitBtn.addEventListener('click', function() {
+                if (password.value === '' || confirmPassword.value === '') {
+                    alert('비밀번호를 입력해주세요.');
+                } else if (password.value !== confirmPassword.value) {
+                    alert('비밀번호가 일치하지 않습니다.');
+                } else {
+                    step2.classList.add('slide-to-left');
+                    greetingText.classList.add('slide-to-left');
+                    setTimeout(() => {
+                        step2.classList.add('hidden');
+                        greetingText.classList.add('hidden');
+                        successMessage.classList.remove('hidden');
+                        successMessage.classList.add('show');
+                        progressBar.style.width = '100%';
+                        footerSection.classList.add('hidden');
+                    }, 500);
+                }
+            });
+
+            const inputs = document.querySelectorAll('.textbox');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    setTimeout(() => {
+                        this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                });
+            });
+        });
+    </script>
 </body>
 </html>

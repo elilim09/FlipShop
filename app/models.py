@@ -1,10 +1,9 @@
-# app/models.py
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, Boolean, Float, DateTime, Enum
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, Boolean, Float, DateTime, Enum, func
 from app.database import metadata
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Enum
-Base = declarative_base()
 
+Base = declarative_base()
 
 CategoryEnum = Enum(
     "디지털기기",
@@ -115,6 +114,7 @@ users = Table(
     Column("username", String, unique=True, index=True),
     Column("password", String),
 )
+
 items = Table(
     "items",
     Base.metadata,
@@ -127,9 +127,8 @@ items = Table(
     Column("image_url", String),
     Column("category", CategoryEnum),
     Column("local_category", LocalCategoryEnum),
-    Column("item_date", DateTime)
+    Column("item_date", DateTime, default=func.now(), nullable=False)
 )
-
 
 rentals = Table(
     "rentals",

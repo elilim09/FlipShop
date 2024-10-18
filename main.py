@@ -1,5 +1,5 @@
 from sqlite3 import IntegrityError
-from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile,Response
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from datetime import timedelta, datetime
@@ -9,7 +9,7 @@ from app import crud
 from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, func, DateTime
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
 from app.schemas import ItemCreate, Item, ItemBase
-from pydantic import BaseModel, condecimal
+from pydantic import BaseModel, condecimal, validator
 import httpx
 import dropbox
 from dropbox.files import WriteMode
@@ -20,7 +20,7 @@ from sqlalchemy.orm import relationship
 from app.models import users, items, rentals
 from app.database import database
 from sqlalchemy import insert, select, desc
-
+from fastapi.middleware.cors import CORSMiddleware  # CORS 미들웨어 추가
 
 Base = declarative_base()
 
@@ -30,24 +30,37 @@ dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL="mysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 class Item(BaseModel):
     name: str
     description: str
-    price_per_day: condecimal(max_digits=10, decimal_places=2) # type: ignore
+    price_per_day: condecimal(max_digits=10, decimal_places=2)  # type: ignore
     owner_id: int
     image_url: str = None
     category: str
+
 class UserCreateSchema(BaseModel):
     username: str
     password: str
     confirm_password: str
 
-    def validate_passwords(self):
-        if self.password != self.confirm_password:
-            raise ValueError("Passwords do not match")
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Passwords do not match')
+        return v
 
 templates = Jinja2Templates(directory="app/templates")
 app = FastAPI()
+
+# CORS 설정 추가
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 실제 서비스에서는 허용할 도메인으로 제한하세요
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -57,6 +70,7 @@ class UserModel(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password = Column(String)
+
 def get_db():
     db = SessionLocal()
     try:
@@ -82,15 +96,17 @@ async def home(request: Request):
 @app.get("/login")
 async def login(request: Request):
     return templates.TemplateResponse("login.html", {'request': request})
+
 @app.get("/signup")
 async def signup(request: Request):
     return templates.TemplateResponse("signup ver2.html", {'request': request})
+
 @app.post("/login")
 async def postlogin(
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
-    ):
+):
     user = db.query(UserModel).filter(
         (UserModel.username == form_data.username)
     ).first()
@@ -111,39 +127,36 @@ async def postlogin(
         key="access_token",
         value=access_token,
         httponly=True,
-        max_age=access_token_expires,
-        expires=access_token_expires,
-        secure=True,  # HTTPS가 아닌 경우 False로 설정
-        samesite="Strict"  # 필요에 따라 조정
+        max_age=access_token_expires.total_seconds(),
+        expires=access_token_expires.total_seconds(),
+        secure=True,  # HTTPS를 사용하지 않는다면 False로 설정하세요
+        samesite="Strict"  # 필요에 따라 조정하세요
     )
 
     return {"msg": "Login successful"}
 
 @app.post("/signup")
 async def postsignup(
-    request: Request,
     username: str = Form(...),
     password: str = Form(...),
     confirm_password: str = Form(...),
     db: Session = Depends(get_db)
 ):
     # 사용자 등록 데이터 검증
-    user_data = UserCreateSchema(
-        username=username,
-        password=password,
-        confirm_password=confirm_password
-    )
-
-    # 비밀번호 검증
     try:
-        user_data.validate_passwords()
+        user_data = UserCreateSchema(
+            username=username,
+            password=password,
+            confirm_password=confirm_password
+        )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     # 중복된 사용자 확인
-    existing_username = db.query(UserModel).filter(UserModel.username == user_data.username).first()
-    if existing_username:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nickname already registered")
+    existing_user = db.query(UserModel).filter(UserModel.username == user_data.username).first()
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
+
     # 사용자 생성
     hashed_password = get_password_hash(user_data.password)
     db_user = UserModel(
@@ -155,12 +168,12 @@ async def postsignup(
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
-    except IntegrityError as e:
+    except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database integrity error")
 
-    return templates.TemplateResponse("login.html", {"request": request})
-    
+    return {"msg": "Signup successful"}
+
 # Users
 @app.post("/users/", response_model=dict)
 async def create_user(username: str, password: str):
@@ -186,7 +199,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-#items
+# Items
 @app.get("/create_item")
 async def create_item_page(request: Request):
     return templates.TemplateResponse("create_item.html", {'request': request})
@@ -210,7 +223,7 @@ async def create_item(
         return {"msg": "File was empty, post created without file"}
     try:
         folder_path = f'/{owner_id}-{file.filename}'
-            # Create folder if it doesn't exist
+        # 폴더가 없으면 생성
         try:
             dbx.files_get_metadata(folder_path)
         except dropbox.exceptions.ApiError as e:
@@ -222,14 +235,12 @@ async def create_item(
         dbx.files_upload(file_content, file_path, mode=WriteMode("overwrite"))
         link_response = dbx.sharing_create_shared_link_with_settings(file_path)
         shared_link = link_response.url
-        image_url=shared_link
         image_url = shared_link.replace("dl=0", "raw=1")
 
-
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
     
-    # 데이터베이스에 삽입 쿼리 작성
+    # 데이터베이스에 아이템 정보 삽입
     query = """
     INSERT INTO items (owner_id, name, category, description, price_per_day, image_url, available, item_date)
     VALUES (:owner_id, :name, :category, :description, :price_per_day, :image_url, 1, :item_date)
