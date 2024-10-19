@@ -109,10 +109,10 @@ LocalCategoryEnum = Enum(
 
 users = Table(
     "users",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("username", String, unique=True, index=True),
-    Column("password", String),
+    Base.metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("username", String(255), unique=True, index=True, nullable=False),
+    Column("password", String(255), nullable=False),
 )
 
 items = Table(
@@ -132,7 +132,7 @@ items = Table(
 
 rentals = Table(
     "rentals",
-    metadata,
+    Base.metadata,
     Column("id", Integer, primary_key=True),
     Column("item_id", Integer, ForeignKey("items.id")),
     Column("borrower_id", Integer, ForeignKey("users.id")),

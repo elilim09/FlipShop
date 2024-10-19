@@ -99,7 +99,7 @@ async def login(request: Request):
 
 @app.get("/signup")
 async def signup(request: Request):
-    return templates.TemplateResponse("signup ver2.html", {'request': request})
+    return templates.TemplateResponse("signup_ver2.html", {'request': request})
 
 @app.post("/login")
 async def postlogin(
@@ -129,7 +129,7 @@ async def postlogin(
         httponly=True,
         max_age=access_token_expires.total_seconds(),
         expires=access_token_expires.total_seconds(),
-        secure=True,  # HTTPS를 사용하지 않는다면 False로 설정하세요
+        secure=True,  # HTTPS를 사용하지 않으면 False로 설정하세요
         samesite="Strict"  # 필요에 따라 조정하세요
     )
 

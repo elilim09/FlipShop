@@ -337,16 +337,44 @@
                 } else if (password.value !== confirmPassword.value) {
                     alert('비밀번호가 일치하지 않습니다.');
                 } else {
-                    step2.classList.add('slide-to-left');
-                    greetingText.classList.add('slide-to-left');
-                    setTimeout(() => {
-                        step2.classList.add('hidden');
-                        greetingText.classList.add('hidden');
-                        successMessage.classList.remove('hidden');
-                        successMessage.classList.add('show');
-                        progressBar.style.width = '100%';
-                        footerSection.classList.add('hidden');
-                    }, 500);
+                    // 데이터 준비
+                    const data = new URLSearchParams();
+                    data.append('username', userIdInput.value.trim());
+                    data.append('password', password.value);
+                    data.append('confirm_password', confirmPassword.value);
+
+                    // 백엔드로 POST 요청 전송
+                    fetch('/signup', {
+                        method: 'POST',
+                        body: data,
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(errData => {
+                                throw new Error(errData.detail || 'Signup failed');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 회원가입 성공 처리
+                        step2.classList.add('slide-to-left');
+                        greetingText.classList.add('slide-to-left');
+                        setTimeout(() => {
+                            step2.classList.add('hidden');
+                            greetingText.classList.add('hidden');
+                            successMessage.classList.remove('hidden');
+                            successMessage.classList.add('show');
+                            progressBar.style.width = '100%';
+                            footerSection.classList.add('hidden');
+                        }, 500);
+                    })
+                    .catch(error => {
+                        alert(error.message);
+                    });
                 }
             });
 

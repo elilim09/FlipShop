@@ -5,11 +5,11 @@ from sqlalchemy import insert, select, update, delete
 
 # Users
 async def create_user(username: str, password: str):
-    query = users.insert().values(username=username, password=password)
+    query = insert(users).values(username=username, password=password)
     await database.execute(query)
 
 async def get_user(username: str):
-    query = users.select().where(users.c.username == username)
+    query = select(users).where(users.c.username == username)
     return await database.fetch_one(query)
 
 async def update_user_password(username: str, new_password: str):
@@ -21,13 +21,15 @@ async def delete_user(username: str):
     await database.execute(query)
 
 # Items
-async def create_item(owner_id: int, name: str, description: str, price_per_day: float, image_url: str):
+async def create_item(owner_id: int, name: str, description: str, price_per_day: float, image_url: str, category: str, local_category: str):
     query = insert(items).values(
         owner_id=owner_id,
         name=name,
         description=description,
         price_per_day=price_per_day,
-        image_url=image_url
+        image_url=image_url,
+        category=category,
+        local_category=local_category
     ).returning(items.c.id)
     result = await database.execute(query)
     return result
