@@ -128,7 +128,7 @@
 
         .profile {
             position: fixed;
-            bottom: 30px;
+            bottom: 20px;
             right: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             width: 60px;
@@ -152,7 +152,7 @@
 
         .login-button {
             position: fixed;
-            bottom: 30px;
+            bottom: 20px;
             right: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             width: 60px;
@@ -178,7 +178,7 @@
         .search {
            display: block;
            position: fixed;
-           bottom: 30px;
+           bottom: 20px;
            right: 100px;
            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
            width: 65%;
@@ -187,9 +187,15 @@
            overflow: hidden;
            cursor: pointer;
            transition: transform 0.3s ease, box-shadow 0.3s ease;
-           opacity: 0.4;
-           background-color: #333333;
-           font-size: medium;
+           background-color: rgba(51, 51, 51, 0.7);  /* 약간 투명한 배경 */
+           backdrop-filter: blur(5px);  /* 배경 블러 효과 */
+           font-size: 16px;
+           color: #ffffff;
+           padding: 0 20px;  /* 좌우 패딩 추가 */
+        }
+
+        .search::placeholder {
+           color: rgba(255, 255, 255, 0.7);  /* 플레이스홀더 색상 조정 */
         }
 
         .search:hover {
@@ -197,24 +203,17 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
 
+        .search:focus {
+            outline: none;
+            background-color: rgba(51, 51, 51, 0.9);  /* 포커스 시 배경 더 진하게 */
+        }
+
         @media only screen and (max-width: 768px) {
-    .search {
-        display: block;
-        position: fixed;
-        bottom: 30px;
-        right: 100px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        width: 65%;
-        height: 50px;
-        border-radius: 30px;
-        overflow: hidden;
-        cursor: pointer;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        opacity: 0.4;
-        background-color: #333333;
-        font-size: medium;
-    }
-    }
+            .search {
+                width: calc(100% - 160px);  /* 모바일에서 양 옆 여백 고려 */
+                right: 100px;
+            }
+        }
     </style>
 </head>
 <body style="align-self: center;">
@@ -250,7 +249,7 @@
 
 
     {% if user_is_authenticated %}
-    <a id="profileLink" href="/profile">
+    <a id="profileLink" href="/mypage">
         <div class="profile">
             <img src="app/templates/images/profile.png" alt="User Profile">
         </div>
@@ -258,12 +257,15 @@
     {% else %}
     <a href="/login">
         <div class="login-button">
-            <img src="app/templates/images/profile.png" alt="Login">
+            <img src="https://i.ibb.co/TKSQ1m0/profile.png" alt="Login">
         </div>
     </a>
     {% endif %}
 
-        <input type="text" class="search" placeholder="🔍검색">
+    <form action="/search/" method="get">
+        <input type="text" name="target" class="search" placeholder="🔍 검색">
+        <button type="submit" style="display: none;">검색</button>
+    </form>
 
     
 </body>

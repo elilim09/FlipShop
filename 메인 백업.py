@@ -86,10 +86,6 @@ def get_db():
     finally:
         db.close()
 
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        yield session
-
 @app.on_event("startup")
 async def startup():
     await database.connect()
@@ -122,10 +118,11 @@ async def postlogin(
     request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    result = await db.execute(select(UserModel).where(UserModel.username == form_data.username))
-    user = result.scalar_one_or_none()
+    user = db.query(UserModel).filter(
+        (UserModel.username == form_data.username)
+    ).first()
 
     if not user or not verify_password(form_data.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
@@ -133,21 +130,22 @@ async def postlogin(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
-            "sub": str(user.id),
+            "sub": user.id,
             "username": user.username,
         },
         expires_delta=access_token_expires
     )
-
+    
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
         max_age=access_token_expires.total_seconds(),
         expires=access_token_expires.total_seconds(),
-        secure=False,
-        samesite="Lax"
+        secure=False,  # 개발 환경에서는 False, 운영 환경에서는 True로 설정
+        samesite="Lax"  # CSRF 공격을 방지하는 데 도움이 됩니다.
     )
+
 
     return RedirectResponse(url="/", status_code=302)
 
