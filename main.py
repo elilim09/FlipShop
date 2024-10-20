@@ -21,7 +21,8 @@ from app.models import users, items, rentals
 from app.database import database
 from sqlalchemy import insert, select, desc
 from fastapi.middleware.cors import CORSMiddleware  # CORS 미들웨어 추가
-
+from fastapi.responses import RedirectResponse, JSONResponse
+import jwt
 Base = declarative_base()
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
@@ -30,7 +31,7 @@ dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL="mysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
+SECRET_KEY='dktprtmgkrhtlvek'
 class Item(BaseModel):
     name: str
     description: str
@@ -88,7 +89,11 @@ async def shutdown():
 
 @app.get("/")
 @app.get("/index")
-async def home(request: Request):
+async def home(request: Request, response: Response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    
     query = select(items).order_by(desc(items.c.item_date))
     result = await database.fetch_all(query)
     return templates.TemplateResponse("home.html", {'request': request, 'items': result})
@@ -103,6 +108,7 @@ async def signup(request: Request):
 
 @app.post("/login")
 async def postlogin(
+    request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
@@ -117,7 +123,7 @@ async def postlogin(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={
-            "sub": user.username,
+            "sub": user.id,
             "username": user.username,
         },
         expires_delta=access_token_expires
@@ -126,14 +132,16 @@ async def postlogin(
     response.set_cookie(
         key="access_token",
         value=access_token,
-        httponly=True,
+        httponly=False,
         max_age=access_token_expires.total_seconds(),
         expires=access_token_expires.total_seconds(),
-        secure=True,  # HTTPS를 사용하지 않으면 False로 설정하세요
-        samesite="Strict"  # 필요에 따라 조정하세요
+        secure=False,
+        samesite="Strict"
     )
 
-    return {"msg": "Login successful"}
+    # 템플릿 렌더링 시 request 전달
+    return RedirectResponse(url="/", status_code=302)
+
 
 @app.post("/signup")
 async def postsignup(
@@ -175,7 +183,7 @@ async def postsignup(
     return {"msg": "Signup successful"}
 
 # Users
-@app.post("/users/", response_model=dict)
+@app.post("/users", response_model=dict)
 async def create_user(username: str, password: str):
     user = await crud.get_user(username)
     if user:
@@ -199,12 +207,65 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+def create_access_token(data: dict, expires_delta: timedelta):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + expires_delta
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
+    return encoded_jwt
+
+@app.get("/mypage")
+async def mypage(request: Request, db: Session = Depends(get_db)):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="인증 정보가 없습니다.")
+
+    try:
+        # JWT 디코딩
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        current_time = datetime.utcnow().timestamp()
+        exp_time = payload.get("exp")
+
+        if exp_time is not None and current_time > exp_time:
+            raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
+
+        username = payload.get("username")
+        if username is None:
+            raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+        
+        # 데이터베이스에서 사용자 정보 불러오기
+        user = db.query(UserModel).filter(UserModel.username == username).first()
+        if user is None:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+        
+        # 템플릿에 사용자 정보 전달
+        return templates.TemplateResponse("mypage.html", {"request": request, "user": user})
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+
+@app.get("/logout")
+async def logout(request: Request, response: Response):
+    response.delete_cookie(key="access_token", path="/")
+    return RedirectResponse(url="/login")
+
+@app.get("/validate_token")
+async def validate_token(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = decode_access_token(token)
+        if payload:
+            return {"valid": True}
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 # Items
 @app.get("/create_item")
 async def create_item_page(request: Request):
     return templates.TemplateResponse("create_item.html", {'request': request})
 
-@app.post("/create_item/")
+@app.post("/create_item")
 async def create_item(
     name: str = Form(...),
     category: str = Form(...),
@@ -278,3 +339,11 @@ async def item_detail(item_id: int, request: Request):
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     return templates.TemplateResponse("item_detail.html", {"request": request, "item": item})
+
+
+if __name__ == "__main__": #이 코드가 직접 실행되었는가?
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) #ASGI실행 함수.
+# 스크립트가 직접 실행될 때만 서버를 시작합니다.
+# 다른 스크립트에서 이 모듈을 임포트할 때는 서버가 자동으로 시작되지 않게 합니다.
+# 개발 중에 편리하게 서버를 실행할 수 있게 합니다.

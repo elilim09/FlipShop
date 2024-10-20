@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Page - FlipShop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00FFB2;
+            --secondary-color: #F5A623;
+            --background-color: #F8F9FA;
+            --text-color: #333333;
+            --light-gray: #e9efed;
+        }
+
+        body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header img {
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            color: #000000;
+        }
+
+        .content {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .content h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-info img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-right: 20px;
+        }
+
+        .profile-info div {
+            font-size: 18px;
+        }
+
+        .profile-info div p {
+            margin: 5px 0;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .actions button {
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 25px;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .actions button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .rented-items, .purchased-items {
+            margin-top: 40px;
+        }
+
+        .rented-items h3, .purchased-items h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .item-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .item {
+            background-color: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .item .details {
+            padding: 15px;
+        }
+
+        .item .details h4 {
+            font-size: 18px;
+            margin: 0 0 10px 0;
+        }
+
+        .item .details p {
+            color: #777;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .item .details .price {
+            color: var(--secondary-color);
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
+        <h1>FlipShop</h1>
+    </div>
+
+    <div class="content">
+        <h2>My Page</h2>
+        <div class="profile-info">
+            <img src="images/profile.png" alt="User Profile">
+            <div>
+                <p><strong>Username:</strong> {{ user.username }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button onclick="window.location.href='/edit-profile'">Edit Profile</button>
+            <button onclick="window.location.href='/logout'">Logout</button>
+        </div>
+
+        <div class="rented-items">
+            <h3>Rented Items</h3>
+            <div class="item-list">
+                {% for item in rented_items %}
+                <div class="item">
+                    <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                    <div class="details">
+                        <h4>{{ item.name }}</h4>
+                        <p>#{{ item.category }} | {{ item.local_category }}</p>
+                        <p class="price">{{ item.price_per_day }}원 / 일</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="purchased-items">
+            <h3>Purchased Items</h3>
+            <div class="item-list">
+                {% for item in purchased_items %}
+                <div class="item">
+                    <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                    <div class="details">
+                        <h4>{{ item.name }}</h4>
+                        <p>#{{ item.category }} | {{ item.local_category }}</p>
+                        <p class="price">{{ item.price }}원</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

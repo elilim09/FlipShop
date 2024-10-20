@@ -45,48 +45,6 @@
             color: #000000;
         }
         
-        .nav {
-            display: flex;
-            justify-content: center;
-            padding: 15px;
-            background-color: #ffffff;
-            position: sticky;
-            top: 70px;
-            z-index: 999;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .nav-stack {
-            background-color: var(--light-gray);
-            border-radius: 30px;
-            display: flex;
-            padding: 5px;
-            width: 240px;
-        }
-        
-        .nav button {
-            border: none;
-            border-radius: 25px;
-            background-color: transparent;
-            padding: 10px 20px;
-            margin: 0 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text-color);
-            transition: all 0.3s ease;
-            flex: 1;
-        }
-        
-        .nav button.active {
-            background-color: #333333;
-            color: #ffffff;
-        }
-        
-        .nav button:hover:not(.active) {
-            background-color: rgba(74, 144, 226, 0.1);
-        }
-        
         .tags {
             display: flex;
             justify-content: center;
@@ -167,16 +125,10 @@
             font-size: 18px;
             margin-top: 10px;
         }
-        
-        @media (max-width: 768px) {
-            .product-list {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            }
-        }
 
         .profile {
             position: fixed;
-            bottom: 20px;
+            bottom: 30px;
             right: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             width: 60px;
@@ -197,22 +149,82 @@
             transform: translateY(-5px);
             box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
+
+        .login-button {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .login-button img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .login-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        /* 검색창 */
+        .search {
+           display: block;
+           position: fixed;
+           bottom: 30px;
+           right: 100px;
+           box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+           width: 65%;
+           height: 50px;
+           border-radius: 30px;
+           overflow: hidden;
+           cursor: pointer;
+           transition: transform 0.3s ease, box-shadow 0.3s ease;
+           opacity: 0.4;
+           background-color: #333333;
+           font-size: medium;
+        }
+
+        .search:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        @media only screen and (max-width: 768px) {
+    .search {
+        display: block;
+        position: fixed;
+        bottom: 30px;
+        right: 100px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        width: 65%;
+        height: 50px;
+        border-radius: 30px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        opacity: 0.4;
+        background-color: #333333;
+        font-size: medium;
+    }
+    }
     </style>
 </head>
-<body>
+<body style="align-self: center;">
     <div class="header">
         <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
         <h1>FlipShop</h1>
     </div>
-    <div class="nav">
-        <div class="nav-stack">
-            <button class="active">중고렌트</button>
-            <button>중고구매</button>
-        </div>
-    </div>
     <div class="tags">
         <div class="blue">#디지털기기</div>
-        <div class="orange">#가구/인테리어</div>
+        <div class="orange">#가구/인터디어</div>
         <div class="purple">#가전</div>
         <div class="yellow">#의류</div>
         <div class="green">#스포츠</div>
@@ -236,8 +248,23 @@
         {% endfor %}
     </div>
 
-    <div class="profile">
-        <img src="images/profile.png" alt="User Profile">
-    </div>
+
+    {% if user_is_authenticated %}
+    <a id="profileLink" href="/profile">
+        <div class="profile">
+            <img src="app/templates/images/profile.png" alt="User Profile">
+        </div>
+    </a>
+    {% else %}
+    <a href="/login">
+        <div class="login-button">
+            <img src="app/templates/images/profile.png" alt="Login">
+        </div>
+    </a>
+    {% endif %}
+
+        <input type="text" class="search" placeholder="🔍검색">
+
+    
 </body>
 </html>

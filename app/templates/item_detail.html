@@ -8,141 +8,147 @@
         body, html {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f3f4f6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
         }
         .header {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
-            background-color: #F5F5F5;
-            border-bottom: 1px solid #ddd;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             position: sticky;
             top: 0;
             z-index: 1000;
         }
         .header img {
-            height: 50px;
-            margin-right: 10px;
+            height: 40px;
         }
-        .header h1 {
+        .back-button {
+            background: none;
+            border: none;
             font-size: 24px;
-            margin: 0;
-        }
-        .hashtag {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #4ade80;
-        }
-        main {
-            flex-grow: 1;
-            padding: 1rem;
-        }
-        .item-card {
-            background-color: white;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
         }
         .item-image {
-            background-color: #e5e7eb;
-            display: inline-block; /* 컨테이너가 이미지 크기에 맞게 조정되도록 설정 */
             width: 100%;
-        }
-        .item-details {
-            padding: 1rem;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
         .item-title {
-            font-size: 1.25rem;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .item-price {
+            font-size: 22px;
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            color: #4ade80;
+            margin-bottom: 15px;
         }
         .item-categories {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
+            gap: 10px;
+            margin-bottom: 20px;
         }
         .category-tag {
-            background-color: #e5e7eb;
-            color: #4b5563;
-            padding: 0.25rem 0.5rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
         }
         .item-description {
-            color: #4b5563;
-            margin-bottom: 1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
         }
         .seller-info {
-            color: #6b7280;
-            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
         }
-        footer {
-            background-color: white;
-            padding: 1rem;
+        .seller-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+        }
+        .seller-name {
+            font-weight: 600;
+        }
+        .action-buttons {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            padding: 15px 20px;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+        }
+        .bookmark-button, .contact-button {
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
         }
         .bookmark-button {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            color: #4b5563;
-            background: none;
+            background-color: #e9ecef;
+            color: #495057;
             border: none;
-            cursor: pointer;
         }
         .contact-button {
             background-color: #4ade80;
             color: white;
-            padding: 0.5rem 1.5rem;
-            border-radius: 9999px;
-            font-weight: 600;
             border: none;
-            cursor: pointer;
+            flex-grow: 1;
+            margin-left: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
+    <header class="header">
+        <button class="back-button">&#8592;</button>
         <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
-        <h1>FlipShop</h1>
+    </header>
+    
+    <div class="container">
+        <img src='{{ item.image_url }}' alt="{{ item.name }} 이미지" class="item-image">
+        
+        <h1 class="item-title">{{ item.name }}</h1>
+        <p class="item-price">{{ item.price }}</p>
+        
+        <div class="item-categories">
+            <span class="category-tag">#{{ item.category }}</span>
+            <span class="category-tag">#{{ item.local_category }}</span>
+        </div>
+        
+        <p class="item-description">{{ item.description }}</p>
+        
+        <div class="seller-info">
+            <img src="https://via.placeholder.com/50" alt="판매자 아바타" class="seller-avatar">
+            <span class="seller-name">{{ item.owner_name }}</span>
+        </div>
     </div>
     
-    <main>
-        <div class="item-card">
-            <div class="item-image">
-                <img src='{{ item.image_url }}' alt="{{ item.name }} 이미지" style="object-fit: contain; width: 100%; height: auto; max-width: 100%; max-height: 400px;">
-            </div>
-            <div class="item-details">
-                <h2 class="item-title">{{ item.name }} : 가격</h2>
-                <div class="item-categories">
-                    <span class="category-tag">#{{ item.category }}</span>
-                    <span class="category-tag">#{{ item.local_category }}</span>
-                </div>
-                <p class="item-description">
-                    {{item.description}}
-                </p>
-                <div class="seller-info">
-                    판매자 : {{item.owner_name}}
-                </div>
-            </div>
-        </div>
-    </main>
-    
-    <footer>
+    <div class="action-buttons">
         <button class="bookmark-button">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
             </svg>
-            나중에 다시보기
+            나중에 보기
         </button>
         <button class="contact-button">연락해보기</button>
-    </footer>
+    </div>
 </body>
 </html>
