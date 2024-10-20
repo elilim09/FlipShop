@@ -139,7 +139,6 @@ async def postlogin(
         samesite="Strict"
     )
 
-    # 템플릿 렌더링 시 request 전달
     return RedirectResponse(url="/", status_code=302)
 
 
