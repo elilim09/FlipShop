@@ -1,31 +1,20 @@
 from sqlite3 import IntegrityError
-from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile, Response
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile, Response, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from datetime import timedelta, datetime
-from sqlalchemy.orm import sessionmaker, Session
-from app.database import database
-from app import crud
-from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, func, DateTime
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, select, or_, desc, DateTime
+from sqlalchemy.ext.declarative import declarative_base
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
-from app.schemas import ItemCreate, Item, ItemBase
-from pydantic import BaseModel, condecimal, validator
-import httpx
+from pydantic import BaseModel, validator
 import dropbox
 from dropbox.files import WriteMode
-from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ForeignKey, UniqueConstraint
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from app.models import users, items, rentals
-from app.database import database
-from sqlalchemy import insert, select, desc
 from fastapi.middleware.cors import CORSMiddleware  # CORS 미들웨어 추가
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse
 import jwt
-from sqlalchemy import or_
-from fastapi import Query
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+
 Base = declarative_base()
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
@@ -34,12 +23,12 @@ dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-SECRET_KEY='dktprtmgkrhtlvek'
-class Item(BaseModel):
+SECRET_KEY = 'dktprtmgkrhtlvek'
+
+class ItemSchema(BaseModel):
     name: str
     description: str
-    price_per_day: condecimal(max_digits=10, decimal_places=2)  # type: ignore
+    price_per_day: float
     owner_id: int
     image_url: str = None
     category: str
@@ -56,7 +45,7 @@ class UserCreateSchema(BaseModel):
         return v
 
     class Config:
-        from_attributes = True  # Pydantic V2에서 사용되는 새로운 설정 키
+        orm_mode = True
 
 templates = Jinja2Templates(directory="app/templates")
 app = FastAPI()
@@ -64,7 +53,7 @@ app = FastAPI()
 # CORS 설정 추가
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실제 서비스에서는 허용할 도메인으로 제한하세요
+    allow_origins=["*"],  # 실제 서비스에서는 허용할 도메인으로 제한하기!
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,38 +65,36 @@ class UserModel(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    password = Column(String)
+    username = Column(String(255), unique=True, index=True)
+    password = Column(String(255))
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+class ItemModel(Base):
+    __tablename__ = "items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    owner_id = Column(Integer, ForeignKey('users.id'))
+    name = Column(String(255))
+    category = Column(String(255))
+    description = Column(Text)
+    price_per_day = Column(Integer)
+    image_url = Column(String(255))
+    available = Column(Integer)
+    item_date = Column(DateTime)
 
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
 
-@app.on_event("startup")
-async def startup():
-    await database.connect()
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
-
 @app.get("/")
 @app.get("/index")
-async def home(request: Request, response: Response):
+async def home(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
-    
-    query = select(items).order_by(desc(items.c.item_date))
-    result = await database.fetch_all(query)
-    return templates.TemplateResponse("home.html", {'request': request, 'items': result})
+
+    result = await db.execute(select(ItemModel).order_by(desc(ItemModel.item_date)))
+    items_list = result.scalars().all()
+    return templates.TemplateResponse("home.html", {'request': request, 'items': items_list})
 
 @app.get("/login")
 async def login(request: Request):
@@ -143,21 +130,20 @@ async def postlogin(
         key="access_token",
         value=access_token,
         httponly=True,
-        max_age=access_token_expires.total_seconds(),
-        expires=access_token_expires.total_seconds(),
+        max_age=int(access_token_expires.total_seconds()),
+        expires=int(access_token_expires.total_seconds()),
         secure=False,
         samesite="Lax"
     )
 
     return RedirectResponse(url="/", status_code=302)
 
-
 @app.post("/signup")
 async def postsignup(
     username: str = Form(...),
     password: str = Form(...),
     confirm_password: str = Form(...),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     # 사용자 등록 데이터 검증
     try:
@@ -170,7 +156,8 @@ async def postsignup(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     # 중복된 사용자 확인
-    existing_user = db.query(UserModel).filter(UserModel.username == user_data.username).first()
+    result = await db.execute(select(UserModel).where(UserModel.username == user_data.username))
+    existing_user = result.scalar_one_or_none()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
 
@@ -183,48 +170,16 @@ async def postsignup(
 
     try:
         db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
+        await db.commit()
+        await db.refresh(db_user)
     except IntegrityError:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database integrity error")
 
     return {"msg": "Signup successful"}
 
-# Users
-@app.post("/users", response_model=dict)
-async def create_user(username: str, password: str):
-    user = await crud.get_user(username)
-    if user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    hashed_password = get_password_hash(password)
-    await crud.create_user(username, hashed_password)
-    return {"username": username}
-
-@app.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = await crud.get_user(form_data.username)
-    if not user or not verify_password(form_data.password, user["password"]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user["username"]}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-
-def create_access_token(data: dict, expires_delta: timedelta):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
-    return encoded_jwt
-
 @app.get("/mypage")
-async def mypage(request: Request, db: Session = Depends(get_db)):
+async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status_code=401, detail="인증 정보가 없습니다.")
@@ -241,12 +196,13 @@ async def mypage(request: Request, db: Session = Depends(get_db)):
         username = payload.get("username")
         if username is None:
             raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
-        
+
         # 데이터베이스에서 사용자 정보 불러오기
-        user = db.query(UserModel).filter(UserModel.username == username).first()
+        result = await db.execute(select(UserModel).where(UserModel.username == username))
+        user = result.scalar_one_or_none()
         if user is None:
             raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
-        
+
         # 템플릿에 사용자 정보 전달 및 user_is_authenticated 설정
         return templates.TemplateResponse("mypage.html", {"request": request, "user": user, "user_is_authenticated": True})
 
@@ -281,14 +237,15 @@ async def create_item(
     description: str = Form(...),
     price_per_day: float = Form(...),
     owner_id: int = Form(...),
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db)
 ):
     item_date = datetime.utcnow()
 
     if file.content_type not in ['image/jpeg', 'image/png']:
         raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG files are allowed.")
     file_content = await file.read()
-    
+
     if len(file_content) == 0:
         return {"msg": "File was empty, post created without file"}
     try:
@@ -309,26 +266,26 @@ async def create_item(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
-    
+
     # 데이터베이스에 아이템 정보 삽입
-    query = """
-    INSERT INTO items (owner_id, name, category, description, price_per_day, image_url, available, item_date)
-    VALUES (:owner_id, :name, :category, :description, :price_per_day, :image_url, 1, :item_date)
-    """
-    values = {
-        "owner_id": owner_id,
-        "name": name,
-        "category": category,
-        "description": description,
-        "price_per_day": price_per_day,
-        "image_url": image_url,
-        "item_date": item_date
-    }
+    new_item = ItemModel(
+        owner_id=owner_id,
+        name=name,
+        category=category,
+        description=description,
+        price_per_day=price_per_day,
+        image_url=image_url,
+        available=1,
+        item_date=item_date
+    )
 
     # 데이터베이스에 쿼리 실행
     try:
-        await database.execute(query=query, values=values)
+        db.add(new_item)
+        await db.commit()
+        await db.refresh(new_item)
     except Exception as e:
+        await db.rollback()
         raise HTTPException(status_code=500, detail="Failed to insert item into database. Error: " + str(e))
 
     return {
@@ -342,29 +299,67 @@ async def create_item(
     }
 
 @app.get("/items/{item_id}")
-async def item_detail(item_id: int, request: Request):
-    query = select(items).where(items.c.id == item_id)
-    item = await database.fetch_one(query)
+async def item_detail(item_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ItemModel).where(ItemModel.id == item_id))
+    item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     return templates.TemplateResponse("item_detail.html", {"request": request, "item": item})
 
-
-if __name__ == "__main__": #이 코드가 직접 실행되었는가?
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) #ASGI실행 함수.
-# 스크립트가 직접 실행될 때만 서버를 시작합니다.
-# 다른 스크립트에서 이 모듈을 임포트할 때는 서버가 자동으로 시작되지 않게 합니다.
-# 개발 중에 편리하게 서버를 실행할 수 있게 합니다.
-
 @app.get("/search/")
 async def search(
     request: Request,
-    target: str = Query(..., description="검색할 키워드"), 
-    db: Session = Depends(get_db)):
-    query = select(items).where(or_(items.c.name.like(f"%{target}%"),items.c.description.like(f"%{target}%"))).order_by(items.c.item_date).limit(10)
-    result = await database.fetch_all(query)
-    if not result:
+    target: str = Query(..., description="검색할 키워드"),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(ItemModel)
+        .where(or_(ItemModel.name.like(f"%{target}%"), ItemModel.description.like(f"%{target}%")))
+        .order_by(ItemModel.item_date)
+        .limit(10)
+    )
+    items_list = result.scalars().all()
+    if not items_list:
         raise HTTPException(status_code=404, detail="검색 결과가 없습니다.")
 
-    return templates.TemplateResponse("home.html", {"request": request, "items": result})
+    return templates.TemplateResponse("home.html", {"request": request, "items": items_list})
+
+if __name__ == "__main__":  # 이 코드가 직접 실행되었는가?
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)  # ASGI 실행 함수.
+
+# app/auth.py
+from datetime import datetime, timedelta
+from typing import Optional
+from jose import jwt
+from passlib.context import CryptContext
+from pydantic import BaseModel
+
+SECRET_KEY = 'dktprtmgkrhtlvek'
+ALGORITHM = "HS256"
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)  # 기본 15분
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def decode_access_token(token: str):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    return payload
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)

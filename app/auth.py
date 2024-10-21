@@ -4,6 +4,7 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
+import os
 
 # to get a string like this run:
 # openssl rand -hex 32
