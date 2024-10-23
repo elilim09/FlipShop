@@ -1,16 +1,25 @@
 # app/crud.py
-from app.models import users, items, rentals
+from app.models import users, items, rentals, UserModel
 from app.database import database
 from sqlalchemy import insert, select, update, delete
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from app.auth import UserInDB
 
 # Users
-async def create_user(username: str, password: str):
-    query = insert(users).values(username=username, password=password)
-    await database.execute(query)
+async def create_user(username: str, hashed_password: str, db: AsyncSession):
+    user = UserModel(username=username, password=hashed_password)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
 
-async def get_user(username: str):
-    query = select(users).where(users.c.username == username)
-    return await database.fetch_one(query)
+async def get_user(username: str, db: AsyncSession) -> UserInDB:
+    result = await db.execute(select(UserModel).where(UserModel.username == username))
+    user = result.scalar_one_or_none()
+    if user:
+        return UserInDB(username=user.username, hashed_password=user.password)
+    return None
 
 async def update_user_password(username: str, new_password: str):
     query = update(users).where(users.c.username == username).values(password=new_password)

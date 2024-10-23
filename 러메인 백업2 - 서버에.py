@@ -11,22 +11,21 @@ from app.auth import create_access_token, verify_password, get_password_hash, de
 from pydantic import BaseModel, validator
 import dropbox
 from dropbox.files import WriteMode
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware  # CORS 미들웨어 추가
 from fastapi.responses import RedirectResponse
-from jose import jwt  # 수정된 부분
-from jose.exceptions import JWTError, ExpiredSignatureError  # 수정된 부분
+from datetime import timedelta
+from jose.exceptions import JWTError, ExpiredSignatureError
+from jose import jwt
 
 Base = declarative_base()
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
-SECRET_KEY = 'dktprtmgkrhtlvek'
-ALGORITHM = "HS256"
-
-DROP_API_KEY = "sl.B-r4vU7LPBpj-Ww-tUC3cD8L-8fz4Ea-JAW7r_GAq4zMVe8Ffp7ez3xmmGTHxI-X8o0xuUknvi9aqUy8nsPYB0us4Gq8wpTjpuzNYwhUUA4WCGJnNOQYtoaaepPP9QLy1fljTDZWdrJdIwJESb2HepY"  # 실제 키로 대체하세요
+DROP_API_KEY = "sl.B-r4vU7LPBpj-Ww-tUC3cD8L-8fz4Ea-JAW7r_GAq4zMVe8Ffp7ez3xmmGTHxI-X8o0xuUknvi9aqUy8nsPYB0us4Gq8wpTjpuzNYwhUUA4WCGJnNOQYtoaaepPP9QLy1fljTDZWdrJdIwJESb2HepY"
 dbx = dropbox.Dropbox(DROP_API_KEY)
-SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"  # 실제 URL로 대체하세요
+SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+SECRET_KEY = 'dktprtmgkrhtlvek'
 
 class ItemSchema(BaseModel):
     name: str
@@ -107,18 +106,17 @@ async def home(request: Request, response: Response, db: AsyncSession = Depends(
     if token:
         try:
             # JWT 디코딩
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
             username = payload.get("username")
-            # print(f"Decoded username: {username}")  # 디버깅용 출력
             if username:
                 # 토큰이 유효하고 사용자명이 있으면 인증된 것으로 간주
                 user_is_authenticated = True
-        except ExpiredSignatureError:
+        except jwt.ExpiredSignatureError:
             # 토큰이 만료됨
             pass
         except JWTError:
-            # 유효하지 않은 토큰
-            pass
+            # 모든 JWT 관련 예외를 처리
+            raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
 
     result = await db.execute(select(ItemModel).order_by(desc(ItemModel.item_date)))
     items_list = result.scalars().all()
@@ -153,12 +151,11 @@ async def postlogin(
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
     data={
-        "sub": user.username.encode('utf-8').decode('unicode_escape'),  # 예시
-        "username": user.username.encode('utf-8').decode('unicode_escape'),
+        "sub": user.username,
+        "username": user.username,
     },
     expires_delta=access_token_expires
     )
-
     
     response.set_cookie(
         key="access_token",
@@ -167,7 +164,7 @@ async def postlogin(
         max_age=int(access_token_expires.total_seconds()),
         expires=int(access_token_expires.total_seconds()),
         secure=False,  # 개발 환경에서는 False, 운영 환경에서는 True로 설정
-        samesite="Lax"
+        samesite="Lax"  # CSRF 공격을 방지하는 데 도움이 됩니다.
     )
 
     return RedirectResponse(url="/", status_code=302)
@@ -220,7 +217,7 @@ async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
 
     try:
         # JWT 디코딩
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         current_time = datetime.utcnow().timestamp()
         exp_time = payload.get("exp")
 
@@ -240,11 +237,11 @@ async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
         # 템플릿에 사용자 정보 전달 및 user_is_authenticated 설정
         return templates.TemplateResponse("mypage.html", {"request": request, "user": user, "user_is_authenticated": True})
 
-    except ExpiredSignatureError:
+    except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
     except JWTError as e:
         raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
-    
+
 @app.get("/logout")
 async def logout(request: Request, response: Response):
     response.delete_cookie(key="access_token", path="/")
@@ -360,11 +357,7 @@ async def search(
 
 if __name__ == "__main__":  # 이 코드가 직접 실행되었는가?
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
-
+    uvicorn.run(app, host="0.0.0.0", port=8000)  # ASGI 실행 함수.
 
 # app/auth.py
 from datetime import datetime, timedelta
