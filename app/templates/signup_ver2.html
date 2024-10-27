@@ -352,12 +352,21 @@
                         },
                     })
                     .then(response => {
+                        const contentType = response.headers.get('content-type');
                         if (!response.ok) {
-                            return response.json().then(errData => {
-                                throw new Error(errData.detail || 'Signup failed');
-                            });
+                            if (contentType && contentType.includes('application/json')) {
+                                // 응답이 JSON 형식인 경우
+                                return response.json().then(errData => {
+                                    throw new Error(errData.detail || 'Signup failed');
+                                });
+                            } else {
+                                // 응답이 JSON이 아닌 경우 텍스트로 처리
+                                return response.text().then(errText => {
+                                    throw new Error(errText || 'Signup failed');
+                                });
+                            }
                         }
-                        return response.json();
+                        return response.json(); // 정상적인 응답이 JSON 형식일 것으로 기대
                     })
                     .then(data => {
                         // 회원가입 성공 처리
@@ -373,7 +382,7 @@
                         }, 500);
                     })
                     .catch(error => {
-                        alert(error.message);
+                        alert('회원가입 중 오류가 발생했습니다: ' + error.message);
                     });
                 }
             });

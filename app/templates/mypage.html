@@ -178,8 +178,26 @@
 
         <div class="actions">
             <button onclick="window.location.href='/edit-profile'">Edit Profile</button>
-            <button onclick="window.location.href='/logout'">Logout</button>
+            <button onclick="logout()">Logout</button>
         </div>
+        
+        <script>
+            async function logout() {
+                try {
+                    // 로그아웃 엔드포인트에 요청 보내기
+                    const response = await fetch('/logout', {
+                        method: 'GET',
+                        credentials: 'include'  // 쿠키를 함께 보내도록 설정
+                    });
+                    if (response.redirected) {
+                        window.location.href = response.url;  // 리다이렉트된 URL로 이동
+                    }
+                } catch (error) {
+                    console.error("Logout failed:", error);
+                }
+            }
+        </script>
+        
 
         <div class="rented-items">
             <h3>Rented Items</h3>

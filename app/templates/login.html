@@ -186,7 +186,10 @@
             fetch(event.target.action, {
                 method: event.target.method,
                 body: formData,
+                credentials: 'include', // 이 줄 추가
             })
+
+
             .then(response => {
                 if (response.ok) {
                     // 로그인 성공 시 인증 상태를 업데이트

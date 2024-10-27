@@ -118,7 +118,7 @@
 </head>
 <body>
     <header class="header">
-        <button class="back-button">&#8592;</button>
+        <button class="back-button" onclick="history.back();">&#8592;</button>
         <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
     </header>
     
@@ -148,7 +148,7 @@
             </svg>
             나중에 보기
         </button>
-        <button class="contact-button">연락해보기</button>
+        <button class="contact-button" onclick="window.location.href='/chat/{{ item.owner_id or 0 }}';">연락해보기</button>
     </div>
 </body>
 </html>

@@ -326,19 +326,11 @@
         {% endfor %}
     </div>
 
-    {% if user_is_authenticated %}
     <a id="profileLink" href="/mypage">
         <div class="profile">
             <img src="app/templates/images/profile.png" alt="User Profile">
         </div>
     </a>
-    {% else %}
-    <a href="/login">
-        <div class="login-button">
-            <img src="https://i.ibb.co/TKSQ1m0/profile.png" alt="Login">
-        </div>
-    </a>
-    {% endif %}
 
     <form action="/search/" method="get" class="search-container">
         <input type="text" name="target" class="search-input" placeholder="🔍 검색">

@@ -2,7 +2,9 @@ from sqlite3 import IntegrityError
 from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile, Response, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
-from datetime import timedelta, datetime
+from datetime import datetime as dt
+from datetime import timedelta as td
+import datetime
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, select, or_, desc, DateTime
@@ -13,17 +15,25 @@ import dropbox
 from dropbox.files import WriteMode
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from jose import jwt  # 구축된 번들
-from jose.exceptions import JWTError, ExpiredSignatureError  # 구축된 번들
+from jose import jwt
+from jose.exceptions import JWTError, ExpiredSignatureError# 구축된 번들
 import json
+import os
 
+import time
+from fastapi import FastAPI, HTTPException, Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.future import select
+from app.models import ChatModel  # ChatModel 가져오기
+from typing import List
 Base = declarative_base()
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
-SECRET_KEY = 'dktprtmgkrhtlvek'
+SECRET_KEY = 'dkgkqrurgkrhtlvek' #os.environ.get('SECRET_KEY', 'dkgkqrurgkrhtlvek')
 ALGORITHM = "HS256"
 
-DROP_API_KEY = "sl.B_giPxROE2OJ-XF2un3MX90p4r2OYVCMpplMWaZcjIp27gIqShnVegdxfuz6L6vjTDDGbMBhHHx3EYZ5UrGbscxyOemBmoFSsQvO0tdzXv5NRjHEG7JCI-TfKYUOn6oMj2ID5XB-fgUXg-feCLV9L-U"  # 실제 키로 대체하세요
+DROP_API_KEY = "sl.B_ivWy2MbVQbAhETFXJAe0774dEmm2-AYzQl1VAHS7jhSZhj1-hKHiY5UpwBXfI6U-hVQI03zyHCIlpgW_sKIYiy2MRlfwXivY9NeG-KVJ-FcwxY0i_r6lEwS6jh-9hhfeolLAoMGo0OJWHYLr-fmWQ"  # 실제 키로 대체하세요
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"  # 실제 URL로 대체하세요
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
@@ -57,7 +67,7 @@ app = FastAPI()
 # CORS 설정 추가
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실제 서비스에서는 허용할 도메인으로 제한하기!
+    allow_origins=["http://127.0.0.1:8000/"],  # 실제 프론트엔드 도메인으로 변경
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -91,9 +101,11 @@ async def startup():
         await conn.run_sync(Base.metadata.create_all)
 
 async def get_db():
-    async with AsyncSessionLocal() as session:
-        yield session
-
+    db = AsyncSessionLocal()
+    try:
+        yield db
+    finally:
+        await db.close()
 @app.get("/")
 @app.get("/index")
 async def home(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
@@ -151,115 +163,112 @@ async def postlogin(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
 ):
-    # 비동기식으로 사용자 조회
-    result = await db.execute(select(UserModel).where(UserModel.username == form_data.username))
+    # 사용자 검증
+    result = await db.execute(
+        select(UserModel).where(UserModel.username == form_data.username)
+    )
     user = result.scalar_one_or_none()
-
     if not user or not verify_password(form_data.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # 토큰 생성
+    access_token_expires = td(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-    data={
-        "sub": user.username.encode('utf-8').decode('unicode_escape'),  # 예시
-        "username": user.username.encode('utf-8').decode('unicode_escape'),
-    },
-    expires_delta=access_token_expires
+        data={
+            "sub": str(user.id),
+            "username": str(user.username),
+        },
+        expires_delta=access_token_expires
     )
 
+    # 리다이렉트 응답 생성
+    response = RedirectResponse(url="/", status_code=302)
+    
+    # 쿠키 설정
     response.set_cookie(
         key="access_token",
         value=access_token,
-        httponly=True,
+        httponly=False,  # JavaScript에서 접근해야 하므로 False
         max_age=int(access_token_expires.total_seconds()),
-        expires=int(access_token_expires.total_seconds()),
-        secure=False,  # 개발 환경에서는 False, 운영 환경에서는 True로 설정
-        samesite="Lax"
+        path="/",
+        samesite="lax",
+        secure=False,  # 로컬 환경이므로 False
     )
-
-    # 클라이언트 측 인증 상태 저장 (localStorage 활용 스크립트 추가)
-    response.headers["HX-Trigger"] = "login"
-
-    return RedirectResponse(url="/", status_code=302)
-
-@app.post("/signup")
-async def postsignup(
-    username: str = Form(...),
-    password: str = Form(...),
-    confirm_password: str = Form(...),
-    db: AsyncSession = Depends(get_db)
-):
-    # 사용자 등록 데이터 검증
-    try:
-        user_data = UserCreateSchema(
-            username=username,
-            password=password,
-            confirm_password=confirm_password
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-    # 중복된 사용자 확인
-    result = await db.execute(select(UserModel).where(UserModel.username == user_data.username))
-    existing_user = result.scalar_one_or_none()
-    if existing_user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
-
-    # 사용자 생성
-    hashed_password = get_password_hash(user_data.password)
-    db_user = UserModel(
-        username=user_data.username,
-        password=hashed_password
-    )
-
-    try:
-        db.add(db_user)
-        await db.commit()
-        await db.refresh(db_user)
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database integrity error")
-
-    return {"msg": "Signup successful"}
+    
+    print(f"Cookie set with token: {access_token[:20]}...")
+    return response
 
 @app.get("/mypage")
 async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
+    # 쿠키에서 토큰 가져오기
     token = request.cookies.get("access_token")
+    
+    # 디버깅을 위한 로그
+    print(f"Received token in mypage: {token[:20] if token else 'No token'}")
+    
     if not token:
-        raise HTTPException(status_code=401, detail="인증 정보가 없습니다.")
+        print("No token found in cookies")
+        return RedirectResponse(url="/login", status_code=307)
 
     try:
-        # JWT 디버코딩
+        # JWT 디코딩
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        current_time = datetime.utcnow().timestamp()
-        exp_time = payload.get("exp")
-
-        if exp_time is not None and current_time > exp_time:
-            raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
-
         username = payload.get("username")
-        if username is None:
-            raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+        
+        if not username:
+            print("No username in token payload")
+            return RedirectResponse(url="/login", status_code=307)
 
-        # 데이터베이스에서 사용자 정보 불러오기
-        result = await db.execute(select(UserModel).where(UserModel.username == username))
+        # 사용자 정보 조회
+        result = await db.execute(
+            select(UserModel).where(UserModel.username == username)
+        )
         user = result.scalar_one_or_none()
-        if user is None:
-            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+        
+        if not user:
+            print(f"No user found for username: {username}")
+            return RedirectResponse(url="/login", status_code=307)
 
-        # 템플릿에 사용자 정보 전달 및 user_is_authenticated 설정
-        return templates.TemplateResponse("mypage.html", {"request": request, "user": user, "user_is_authenticated": True})
+        return templates.TemplateResponse(
+            "mypage.html", 
+            {
+                "request": request, 
+                "user": user, 
+                "user_is_authenticated": True
+            }
+        )
 
     except ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="토큰이 만료되었습니다.")
+        print("Token has expired")
+        return RedirectResponse(url="/login", status_code=307)
     except JWTError as e:
-        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
+        print(f"JWT Error: {str(e)}")
+        return RedirectResponse(url="/login", status_code=307)
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return RedirectResponse(url="/login", status_code=307)
     
 @app.get("/logout")
 async def logout(request: Request, response: Response):
-    response.delete_cookie(key="access_token", path="/")
-    response.headers["HX-Trigger"] = "logout"
-    return RedirectResponse(url="/login")
+    # 새로운 응답 객체 생성
+    response = RedirectResponse(url="/", status_code=302)
+    
+    # 쿠키 삭제
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        secure=False,
+        httponly=False,
+        samesite="lax"
+    )
+    
+    # localStorage 클리어를 위한 스크립트 트리거
+    response.headers["HX-Trigger"] = json.dumps({
+        "clearAuth": True,
+    })
+    
+    print("Logout successful - Cookie deleted")
+    return response
 
 @app.get("/validate_token")
 async def validate_token(token: str = Depends(oauth2_scheme)):
@@ -285,7 +294,7 @@ async def create_item(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db)
 ):
-    item_date = datetime.utcnow()
+    item_date = dt.now(datetime.timezone.utc)
 
     if file.content_type not in ['image/jpeg', 'image/png']:
         raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG and PNG files are allowed.")
@@ -388,52 +397,55 @@ async def search(
     return templates.TemplateResponse("home.html", {"request": request, "items": items_list})
 
 
+#Chatting 코드
+# 새로운 메시지 추가
+@app.post("/chat/{chat_id}/messages")
+async def add_message(chat_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    data = await request.json()
+    user_id = data.get("user_id")
+    message = data.get("message")
+
+    if not user_id or not message:
+        raise HTTPException(status_code=400, detail="User ID and message are required")
+
+    # 데이터베이스의 sent_at 필드는 기본값이 current_timestamp()이므로 따로 설정할 필요 없음
+    new_message = ChatModel(
+        user1_id=user_id if user_id == 1 else None,  # 실제 사용자의 식별자로 조정 필요
+        user2_id=user_id if user_id == 2 else None,
+        chatname=f"chat_{chat_id}",
+        message=message
+    )
+    db.add(new_message)
+    await db.commit()
+    return {"message": "Message added successfully"}
+
+# 채팅방의 모든 메시지 가져오기
+@app.get("/chat/{chat_id}/messages", response_model=List[dict])
+async def get_messages(chat_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ChatModel).where(ChatModel.chatname == f"chat_{chat_id}").order_by(ChatModel.sent_at))
+    messages = result.scalars().all()
+    return [
+        {
+            "user_id": msg.user1_id if msg.user1_id else msg.user2_id,
+            "message": msg.message,
+            "sent_at": msg.sent_at  # timestamp 값 반환
+        }
+        for msg in messages
+    ]
+
+@app.get("/chat/{owner_id}")
+async def chat_page(owner_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(UserModel).where(UserModel.id == owner_id))
+    owner = result.scalar_one_or_none()
+    if not owner:
+        raise HTTPException(status_code=404, detail="Owner not found")
+
+    return templates.TemplateResponse("chat.html", {"request": request, "owner": owner})
+
+
+
 
 
 if __name__ == "__main__":  # 이 코드가 직접 실행되었는가?
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-
-
-
-
-
-
-
-# app/auth.py
-from datetime import datetime, timedelta
-from typing import Optional
-from jose import jwt
-from passlib.context import CryptContext
-from pydantic import BaseModel
-
-SECRET_KEY = 'dktprtmgkrhtlvek'
-ALGORITHM = "HS256"
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)  # 기본 15분
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def decode_access_token(token: str):
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    return payload
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)

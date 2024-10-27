@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlipShop - 채팅</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            margin: 20px;
+            overflow-y: auto;
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .message {
+            margin-bottom: 10px;
+        }
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .input-container input {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .input-container button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            border: none;
+            background-color: #4ade80;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container" id="chatContainer">
+        <!-- 채팅 메시지가 여기에 표시됨 -->
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="messageInput" placeholder="메시지를 입력하세요...">
+        <button onclick="sendMessage()">전송</button>
+    </div>
+
+    <script>
+        let chatId = 1;  // 채팅방 ID
+        let userId = 1;  // 임의의 사용자 ID, 실제 사용자의 로그인 ID로 대체해야 함
+
+        // 타임스탬프 문자열을 보기 좋은 형식으로 포맷하는 함수
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp); // 타임스탬프 문자열을 Date 객체로 변환
+            const options = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            return date.toLocaleString('ko-KR', options); // 'YYYY-MM-DD HH:MM:SS' 형식으로 출력
+        }
+
+        // 메시지 가져오기 함수
+        async function fetchMessages() {
+            try {
+                const response = await fetch(`/chat/${chatId}/messages`);
+                const messages = await response.json();
+                const chatContainer = document.getElementById("chatContainer");
+                chatContainer.innerHTML = ""; // 기존 메시지 클리어
+
+                messages.forEach(msg => {
+                    const messageDiv = document.createElement("div");
+                    messageDiv.classList.add("message");
+
+                    // 사용자와 메시지 내용을 보여줌
+                    const formattedTime = formatTimestamp(msg.sent_at); // 타임스탬프 형식 변환
+                    messageDiv.textContent = `[사용자 ${msg.user_id}] ${msg.message} (${formattedTime})`;
+
+                    chatContainer.appendChild(messageDiv);
+                });
+                chatContainer.scrollTop = chatContainer.scrollHeight; // 스크롤을 아래로 이동
+            } catch (error) {
+                console.error("메시지 가져오기 오류:", error);
+            }
+        }
+
+        // 메시지 전송 함수
+        async function sendMessage() {
+            const input = document.getElementById("messageInput");
+            const message = input.value.trim();
+            if (message !== "") {
+                try {
+                    await fetch(`/chat/${chatId}/messages`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user_id: userId,
+                            message: message
+                        })
+                    });
+                    input.value = "";
+                    fetchMessages();  // 새 메시지를 추가한 후 메시지 다시 불러오기
+                } catch (error) {
+                    console.error("메시지 전송 오류:", error);
+                }
+            }
+        }
+
+        // 페이지가 로드되면 메시지를 주기적으로 가져오기
+        setInterval(fetchMessages, 2000);  // 2초마다 메시지 가져오기
+        window.onload = fetchMessages;
+    </script>
+</body>
+</html>

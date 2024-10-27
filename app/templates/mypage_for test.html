@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Page</title>
+    <script src="https://unpkg.com/htmx.org"></script>
+    <script>
+        // 로그아웃 후 처리를 위한 이벤트 리스너
+        document.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.xhr.getResponseHeader("HX-Trigger")) {
+                try {
+                    const triggers = JSON.parse(evt.detail.xhr.getResponseHeader("HX-Trigger"));
+                    if (triggers.clearAuth) {
+                        // localStorage 클리어
+                        localStorage.removeItem('user_is_authenticated');
+                        // 홈페이지로 리다이렉트
+                        window.location.href = '/';
+                    }
+                } catch (e) {
+                    console.error('Error parsing HX-Trigger:', e);
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/">Home</a>
+            {% if user_is_authenticated %}
+                <button
+                    hx-get="/logout"
+                    hx-trigger="click"
+                    hx-push-url="true"
+                    class="logout-button">
+                    로그아웃
+                </button>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main>
+        <h1>마이페이지</h1>
+        {% if user %}
+            <div class="user-info">
+                <h2>사용자 정보</h2>
+                <p>사용자명: {{ user.username }}</p>
+                <!-- 추가적인 사용자 정보를 여기에 표시 -->
+            </div>
+        {% else %}
+            <p>로그인이 필요합니다.</p>
+            <a href="/login">로그인하기</a>
+        {% endif %}
+    </main>
+
+    <style>
+        /* 스타일링 */
+        .logout-button {
+            padding: 8px 16px;
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .logout-button:hover {
+            background-color: #ff0000;
+        }
+        
+        nav {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        
+        main {
+            padding: 2rem;
+        }
+        
+        .user-info {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+    </style>
+</body>
+</html>
