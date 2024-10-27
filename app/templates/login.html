@@ -173,5 +173,34 @@
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png" alt="Google Logo" class="google-logo">
         </footer>
     </div>
+
+    <script>
+        // 로그인 후 인증 상태 업데이트 처리
+        document.getElementById("login-form").addEventListener("submit", function(event) {
+            event.preventDefault(); // 기본 폼 제출 방지
+            
+            // 폼 데이터를 수집
+            const formData = new FormData(event.target);
+            
+            // 로그인 API 호출
+            fetch(event.target.action, {
+                method: event.target.method,
+                body: formData,
+            })
+            .then(response => {
+                if (response.ok) {
+                    // 로그인 성공 시 인증 상태를 업데이트
+                    localStorage.setItem('user_is_authenticated', JSON.stringify(true));
+                    window.location.href = "/"; // 로그인 후 홈 페이지로 리다이렉션
+                } else {
+                    throw new Error("Login failed");
+                }
+            })
+            .catch(error => {
+                alert("Invalid username or password. Please try again."); // 오류 메시지 표시
+                console.error("Error:", error);
+            });
+        });
+    </script>    
 </body>
 </html>

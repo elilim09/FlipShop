@@ -13,8 +13,9 @@ import dropbox
 from dropbox.files import WriteMode
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from jose import jwt  # 수정된 부분
-from jose.exceptions import JWTError, ExpiredSignatureError  # 수정된 부분
+from jose import jwt  # 구축된 번들
+from jose.exceptions import JWTError, ExpiredSignatureError  # 구축된 번들
+import json
 
 Base = declarative_base()
 
@@ -22,7 +23,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
 SECRET_KEY = 'dktprtmgkrhtlvek'
 ALGORITHM = "HS256"
 
-DROP_API_KEY = "sl.B-r4vU7LPBpj-Ww-tUC3cD8L-8fz4Ea-JAW7r_GAq4zMVe8Ffp7ez3xmmGTHxI-X8o0xuUknvi9aqUy8nsPYB0us4Gq8wpTjpuzNYwhUUA4WCGJnNOQYtoaaepPP9QLy1fljTDZWdrJdIwJESb2HepY"  # 실제 키로 대체하세요
+DROP_API_KEY = "sl.B_giPxROE2OJ-XF2un3MX90p4r2OYVCMpplMWaZcjIp27gIqShnVegdxfuz6L6vjTDDGbMBhHHx3EYZ5UrGbscxyOemBmoFSsQvO0tdzXv5NRjHEG7JCI-TfKYUOn6oMj2ID5XB-fgUXg-feCLV9L-U"  # 실제 키로 대체하세요
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"  # 실제 URL로 대체하세요
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
@@ -109,9 +110,8 @@ async def home(request: Request, response: Response, db: AsyncSession = Depends(
             # JWT 디코딩
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             username = payload.get("username")
-            # print(f"Decoded username: {username}")  # 디버깅용 출력
             if username:
-                # 토큰이 유효하고 사용자명이 있으면 인증된 것으로 간주
+                # 토큰이 유효하고 사용자명이 있으면 인증된 것으로 가장
                 user_is_authenticated = True
         except ExpiredSignatureError:
             # 토큰이 만료됨
@@ -120,12 +120,20 @@ async def home(request: Request, response: Response, db: AsyncSession = Depends(
             # 유효하지 않은 토큰
             pass
 
+    # 클라이언트 측 인증 상태 저장 (localStorage 활용 스크립트 추가)
+    script = """
+    <script>
+        localStorage.setItem('user_is_authenticated', JSON.stringify(%s));
+    </script>
+    """ % json.dumps(user_is_authenticated)
+
     result = await db.execute(select(ItemModel).order_by(desc(ItemModel.item_date)))
     items_list = result.scalars().all()
     return templates.TemplateResponse("home.html", {
         'request': request,
         'items': items_list,
-        'user_is_authenticated': user_is_authenticated
+        'user_is_authenticated': user_is_authenticated,
+        'script': script
     })
 
 @app.get("/login")
@@ -159,7 +167,6 @@ async def postlogin(
     expires_delta=access_token_expires
     )
 
-    
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -169,6 +176,9 @@ async def postlogin(
         secure=False,  # 개발 환경에서는 False, 운영 환경에서는 True로 설정
         samesite="Lax"
     )
+
+    # 클라이언트 측 인증 상태 저장 (localStorage 활용 스크립트 추가)
+    response.headers["HX-Trigger"] = "login"
 
     return RedirectResponse(url="/", status_code=302)
 
@@ -219,7 +229,7 @@ async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="인증 정보가 없습니다.")
 
     try:
-        # JWT 디코딩
+        # JWT 디버코딩
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         current_time = datetime.utcnow().timestamp()
         exp_time = payload.get("exp")
@@ -248,6 +258,7 @@ async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
 @app.get("/logout")
 async def logout(request: Request, response: Response):
     response.delete_cookie(key="access_token", path="/")
+    response.headers["HX-Trigger"] = "logout"
     return RedirectResponse(url="/login")
 
 @app.get("/validate_token")
@@ -358,9 +369,34 @@ async def search(
 
     return templates.TemplateResponse("home.html", {"request": request, "items": items_list})
 
+@app.get("/category/")
+async def search(
+    request: Request,
+    target: str = Query(..., description="검색할 키워드"),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(ItemModel)
+        .where(or_(ItemModel.category.like(f"%{target}%"), ItemModel.description.like(f"%{target}%")))
+        .order_by(ItemModel.item_date)
+        .limit(10)
+    )
+    items_list = result.scalars().all()
+    if not items_list:
+        raise HTTPException(status_code=404, detail="검색 결과가 없습니다.")
+
+    return templates.TemplateResponse("home.html", {"request": request, "items": items_list})
+
+
+
+
 if __name__ == "__main__":  # 이 코드가 직접 실행되었는가?
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+
+
 
 
 

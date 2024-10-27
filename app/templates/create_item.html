@@ -169,5 +169,16 @@
 });
 
     </script>
+
+    <!-- 로그인 여부 확인 -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const isAuthenticated = JSON.parse(localStorage.getItem('user_is_authenticated'));
+            if (!isAuthenticated) {
+                window.location.href = "/login"; // 로그인 페이지로 리디렉션
+            }
+        });
+    </script>
+    
 </body>
 </html>

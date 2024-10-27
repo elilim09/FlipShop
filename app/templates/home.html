@@ -62,6 +62,11 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             font-size: 14px;
         }
+
+        .tags a {
+            text-decoration: none;
+            color: #000000;
+        }
         
         .tags div:hover {
             transform: translateY(-2px);
@@ -75,6 +80,7 @@
         .tags .green { background-color: #A9FFAC; }
         .tags .red { background-color: #FFA9A9; }
         .tags .lightblue { background-color: #A9BCFF; }
+        .tags .gray { background-color: #606060; }
         
         .product-list {
             padding: 20px;
@@ -174,46 +180,106 @@
             box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
 
-        /* 검색창 */
-        .search {
-           display: block;
+        /* 검색창(PC와 모바일 구분) */
+        .search-icon {
+            display: none;
+        }
+
+        .search-container {
+           display: none;
            position: fixed;
-           bottom: 20px;
-           right: 100px;
-           box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+           bottom: 23px;
+           right: 135px;
            width: 65%;
-           height: 50px;
-           border-radius: 30px;
-           overflow: hidden;
-           cursor: pointer;
-           transition: transform 0.3s ease, box-shadow 0.3s ease;
-           background-color: rgba(51, 51, 51, 0.7);  /* 약간 투명한 배경 */
-           backdrop-filter: blur(5px);  /* 배경 블러 효과 */
-           font-size: 16px;
-           color: #ffffff;
-           padding: 0 20px;  /* 좌우 패딩 추가 */
         }
 
-        .search::placeholder {
-           color: rgba(255, 255, 255, 0.7);  /* 플레이스홀더 색상 조정 */
+        .search-input {
+            width: 100%;
+            height: 50px;
+            border-radius: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            padding: 0 20px;
+            background-color: rgba(51, 51, 51, 0.7);
+            backdrop-filter: blur(5px);
+            font-size: 16px;
+            color: #ffffff;
+            border: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
-        .search:hover {
+        .search-input::placeholder {
+           color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-input:hover {
             transform: translateY(-5px);
             box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
 
-        .search:focus {
+        .search-input:focus {
             outline: none;
-            background-color: rgba(51, 51, 51, 0.9);  /* 포커스 시 배경 더 진하게 */
+            background-color: rgba(51, 51, 51, 0.9);
         }
 
-        @media only screen and (max-width: 768px) {
-            .search {
-                width: calc(100% - 160px);  /* 모바일에서 양 옆 여백 고려 */
-                right: 100px;
+        @media (min-width: 768px) {
+            .search-icon {
+                display: inline-block; /* PC에서는 검색 아이콘 버튼 표시 */
+            }
+
+            .search-container {
+                display: none; /* PC에서는 검색창 숨김 */
             }
         }
+
+        @media (max-width: 767px) {
+            .search-container {
+                display: block; /* 모바일에서는 검색창 표시 */
+            }
+        }
+
+        /* PC용 검색 모달 스타일 */
+        .search-modal {
+            display: none; /* 기본적으로 숨김 */
+            position: fixed;
+            z-index: 1001; /* 다른 요소들보다 위에 오도록 설정 */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* 반투명한 배경 */
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-modal-content {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            max-width: 80%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-modal-input {
+            width: calc(100% - 40px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
     </style>
 </head>
 <body style="align-self: center;">
@@ -222,14 +288,27 @@
         <h1>FlipShop</h1>
     </div>
     <div class="tags">
-        <div class="blue">#디지털기기</div>
-        <div class="orange">#가구/인터디어</div>
-        <div class="purple">#가전</div>
-        <div class="yellow">#의류</div>
-        <div class="green">#스포츠</div>
-        <div class="red">#게임</div>
-        <div class="lightblue">#책</div>
-        <div class="lightblue">+더보기</div>
+        <a href="/category/?target=디지털기기"><div class="blue">#디지털기기</div></a>
+        <a href="/category/?target=가구/인터디어"><div class="orange">#가구/인터디어</div></a>
+        <a href="/category/?target=가전"><div class="purple">#가전</div></a>
+        <a href="/category/?target=의류"><div class="yellow">#의류</div></a>
+        <a href="/category/?target=스포츠"><div class="green">#스포츠</div></a>
+        <a href="/category/?target=게임"><div class="red">#게임</div></a>
+        <a href="/category/?target=책"><div class="lightblue">#책</div></a>
+        <a href="javascript:void(0);" class="search-icon" onclick="openSearchModal()">
+            <div class="gray">🔍</div>
+        </a>
+    </div>
+
+    <!-- PC검색 모달 -->
+    <div id="searchModal" class="search-modal">
+        <div class="search-modal-content">
+            <span class="close" onclick="closeSearchModal()">&times;</span>
+            <form action="/search/" method="get">
+                <input type="text" name="target" class="search-modal-input" placeholder="🔍 검색어를 입력하세요">
+                <button type="submit">검색</button>
+            </form>
+        </div>
     </div>
     
     <div class="product-list">
@@ -247,7 +326,6 @@
         {% endfor %}
     </div>
 
-
     {% if user_is_authenticated %}
     <a id="profileLink" href="/mypage">
         <div class="profile">
@@ -262,11 +340,64 @@
     </a>
     {% endif %}
 
-    <form action="/search/" method="get">
-        <input type="text" name="target" class="search" placeholder="🔍 검색">
-        <button type="submit" style="display: none;">검색</button>
+    <form action="/search/" method="get" class="search-container">
+        <input type="text" name="target" class="search-input" placeholder="🔍 검색">
+        <button type="submit" style="display: none;">검색창</button>
     </form>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 로그인 상태 확인 후 UI 업데이트
+            const isAuthenticated = JSON.parse(localStorage.getItem('user_is_authenticated'));
+            if (isAuthenticated) {
+                document.querySelector('.profile').style.display = 'block';
+                document.querySelector('.login-button').style.display = 'none';
+            } else {
+                document.querySelector('.profile').style.display = 'none';
+                document.querySelector('.login-button').style.display = 'block';
+            }
     
+            // 페이지 접근 시 로그인 상태 확인
+            if (!isAuthenticated && window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
+                window.location.href = "/login";
+            }
+        });
+    
+        // 로그인 후 인증 상태 업데이트
+        document.addEventListener("login", function() {
+            localStorage.setItem('user_is_authenticated', JSON.stringify(true));
+        });
+    
+        // 로그아웃 후 인증 상태 초기화
+        document.addEventListener("logout", function() {
+            localStorage.setItem('user_is_authenticated', JSON.stringify(false));
+        });
+    
+        // 로그아웃 버튼 클릭 시 처리
+        function logoutUser() {
+            localStorage.setItem('user_is_authenticated', JSON.stringify(false));
+            window.location.href = "/logout";
+        }
+
+
+
+        // PC용 검색 모달 열기
+        function openSearchModal() {
+            document.getElementById("searchModal").style.display = "flex";
+        }
+        
+        // PC용 검색 모달 닫기
+        function closeSearchModal() {
+            document.getElementById("searchModal").style.display = "none";
+        }
+        
+        // 모달 바깥 클릭 시 모달 닫기
+        window.onclick = function(event) {
+            const modal = document.getElementById("searchModal");
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>    
 </body>
 </html>
