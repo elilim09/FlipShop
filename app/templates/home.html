@@ -20,6 +20,9 @@
             padding: 0;
             background-color: var(--background-color);
             color: var(--text-color);
+            min-height: 100vh;
+            width: 100%;
+            overflow-x: hidden;
         }
         
         .header {
@@ -32,6 +35,8 @@
             position: sticky;
             top: 0;
             z-index: 1000;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .header img {
@@ -48,31 +53,47 @@
         .tags {
             display: flex;
             justify-content: center;
-            flex-wrap: wrap;
-            padding: 20px;
+            flex-wrap: nowrap;
+            padding: 15px 10px;
             background-color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            width: 100%;
+            box-sizing: border-box;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            gap: 8px;
         }
-        
+
+        .tags::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* 기본 태그 스타일 */
         .tags div {
-            padding: 8px 16px;
-            margin: 5px;
+            padding: 10px 20px;
+            margin: 0;
             border-radius: 20px;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
-            font-size: 14px;
+            font-size: 15px;
+            white-space: nowrap;
+            font-weight: 500;
         }
 
         .tags a {
             text-decoration: none;
             color: #000000;
+            display: flex;
+            align-items: center;
         }
-        
+
         .tags div:hover {
             transform: translateY(-2px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
+
         .tags .blue { background-color: #A9D6FF; }
         .tags .orange { background-color: #FFC8A9; }
         .tags .purple { background-color: #D4A9FF; }
@@ -80,15 +101,17 @@
         .tags .green { background-color: #A9FFAC; }
         .tags .red { background-color: #FFA9A9; }
         .tags .lightblue { background-color: #A9BCFF; }
-        .tags .gray { background-color: #606060; }
+        .tags .gray {background-color: #606060; color: white;}
         
         .product-list {
-            padding: 20px;
+            padding: 10px;
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            gap: 15px;
+            width: 100%;
             max-width: 1200px;
             margin: 0 auto;
+            box-sizing: border-box;
         }
         
         .product {
@@ -97,6 +120,7 @@
             overflow: hidden;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
         }
         
         .product:hover {
@@ -132,65 +156,51 @@
             margin-top: 10px;
         }
 
-        .profile {
+        .profile, .login-button {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            bottom: 15px;
+            right: 15px;
             width: 60px;
             height: 60px;
             border-radius: 50%;
             overflow: hidden;
             cursor: pointer;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            z-index: 1000;
         }
 
-        .profile img {
+        .profile img, .login-button img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .profile:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-
-        .login-button {
+        .create {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            bottom: 90px;
+            right: 15px;
             width: 60px;
             height: 60px;
             border-radius: 50%;
             overflow: hidden;
             cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .login-button img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .login-button:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-
-        /* 검색창(PC와 모바일 구분) */
-        .search-icon {
-            display: none;
+            background-color: var(--primary-color);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
         }
 
         .search-container {
-           display: none;
-           position: fixed;
-           bottom: 23px;
-           right: 135px;
-           width: 65%;
+            display: block;
+            position: fixed;
+            bottom: 23px;
+            right: 90px;
+            left: 15px;
+            z-index: 1000;
         }
 
         .search-input {
@@ -204,92 +214,157 @@
             font-size: 16px;
             color: #ffffff;
             border: none;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
         }
 
         .search-input::placeholder {
-           color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.7);
         }
 
-        .search-input:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-
-        .search-input:focus {
-            outline: none;
-            background-color: rgba(51, 51, 51, 0.9);
-        }
-
-        @media (min-width: 768px) {
-            .search-icon {
-                display: inline-block; /* PC에서는 검색 아이콘 버튼 표시 */
-            }
-
-            .search-container {
-                display: none; /* PC에서는 검색창 숨김 */
-            }
-        }
-
-        @media (max-width: 767px) {
-            .search-container {
-                display: block; /* 모바일에서는 검색창 표시 */
-            }
-        }
-
-        /* PC용 검색 모달 스타일 */
+        /* PC용 검색 모달 */
         .search-modal {
-            display: none; /* 기본적으로 숨김 */
+            display: none;
             position: fixed;
-            z-index: 1001; /* 다른 요소들보다 위에 오도록 설정 */
+            z-index: 1001;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5); /* 반투명한 배경 */
+            background-color: rgba(0, 0, 0, 0.6);
             align-items: center;
             justify-content: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .search-modal.show {
+            display: flex;
+            opacity: 1;
         }
 
         .search-modal-content {
             background-color: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            width: 400px;
-            max-width: 80%;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            border-radius: 15px;
+            width: 500px;
+            max-width: 90%;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+            transform: translateY(-20px);
         }
 
-        .search-modal-input {
-            width: calc(100% - 40px);
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+        .search-modal-content.show {
+            transform: translateY(0);
+        }
+
+        .search-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-color);
         }
 
         .close {
-            float: right;
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
             color: #aaa;
+            transition: color 0.3s ease;
         }
 
         .close:hover {
             color: #000;
         }
 
+        .search-modal-input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-modal-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .search-modal-button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-modal-button:hover {
+            background-color: #00e6a0;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 767px) {
+            .product-list {
+                grid-template-columns: 1fr;
+                padding: 10px;
+                margin-bottom: 80px;
+            }
+
+            .tags {
+                justify-content: flex-start; /* 모바일에서는 왼쪽 정렬 */
+                padding: 12px 8px;
+                gap: 10px;
+            }
+
+            .tags div {
+                padding: 12px 24px; /* 모바일에서 더 큰 패딩 */
+                font-size: 16px; /* 모바일에서 더 큰 폰트 사이즈 */
+                border-radius: 25px; /* 모바일에서 더 둥근 모서리 */
+            }
+
+            .search-icon {
+                display: none;
+            }
+
+            .tags .gray {
+                display: none;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .search-container {
+                display: none;
+            }
+
+            .search-icon {
+                display: inline-block;
+            }
+
+            .product-list {
+                margin-bottom: 40px;
+            }
+        }
     </style>
 </head>
-<body style="align-self: center;">
+<body>
     <div class="header">
         <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
         <h1>FlipShop</h1>
     </div>
+
     <div class="tags">
         <a href="/category/?target=디지털기기"><div class="blue">#디지털기기</div></a>
-        <a href="/category/?target=가구/인터디어"><div class="orange">#가구/인터디어</div></a>
+        <a href="/category/?target=가구/인테리어"><div class="orange">#가구/인테리어</div></a>
         <a href="/category/?target=가전"><div class="purple">#가전</div></a>
         <a href="/category/?target=의류"><div class="yellow">#의류</div></a>
         <a href="/category/?target=스포츠"><div class="green">#스포츠</div></a>
@@ -300,27 +375,29 @@
         </a>
     </div>
 
-    <!-- PC검색 모달 -->
     <div id="searchModal" class="search-modal">
         <div class="search-modal-content">
-            <span class="close" onclick="closeSearchModal()">&times;</span>
+            <div class="search-modal-header">
+                <span class="search-modal-title">검색</span>
+                <span class="close" onclick="closeSearchModal()">&times;</span>
+            </div>
             <form action="/search/" method="get">
                 <input type="text" name="target" class="search-modal-input" placeholder="🔍 검색어를 입력하세요">
-                <button type="submit">검색</button>
+                <button type="submit" class="search-modal-button">검색</button>
             </form>
         </div>
     </div>
-    
+
     <div class="product-list">
         {% for item in items %}
         <div class="product">
             <a href="/items/{{ item.id }}" style="text-decoration: none;">
-            <img src="{{ item.image_url }}" alt="{{ item.name }}">
-            <div class="details">
-                <h2>{{ item.name }}</h2>
-                <p>#{{ item.category }} | {{ item.local_category }}</p>
-                <p class="price">{{ item.price_per_day }}원 / 일</p>
-            </div>
+                <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                <div class="details">
+                    <h2>{{ item.name }}</h2>
+                    <p>#{{ item.category }} | {{ item.local_category }}</p>
+                    <p class="price">{{ item.price_per_day }}원 / 일</p>
+                </div>
             </a>
         </div>
         {% endfor %}
@@ -332,9 +409,15 @@
         </div>
     </a>
 
+    <a href="/create_item">
+        <div class="create">
+            <p>➕</p>
+        </div>
+    </a>
+
     <form action="/search/" method="get" class="search-container">
         <input type="text" name="target" class="search-input" placeholder="🔍 검색">
-        <button type="submit" style="display: none;">검색창</button>
+        <button type="submit" style="display: none;">검색</button>
     </form>
 
     <script>
@@ -371,25 +454,29 @@
             window.location.href = "/logout";
         }
 
-
-
-        // PC용 검색 모달 열기
+        // PC용 검색 모달 관련 함수
         function openSearchModal() {
-            document.getElementById("searchModal").style.display = "flex";
+            const modal = document.getElementById("searchModal");
+            modal.classList.add("show");
+            setTimeout(() => {
+                modal.querySelector(".search-modal-content").classList.add("show");
+            }, 50);
         }
         
-        // PC용 검색 모달 닫기
         function closeSearchModal() {
-            document.getElementById("searchModal").style.display = "none";
+            const modal = document.getElementById("searchModal");
+            modal.querySelector(".search-modal-content").classList.remove("show");
+            setTimeout(() => {
+                modal.classList.remove("show");
+            }, 300);
         }
         
-        // 모달 바깥 클릭 시 모달 닫기
         window.onclick = function(event) {
             const modal = document.getElementById("searchModal");
             if (event.target === modal) {
-                modal.style.display = "none";
+                closeSearchModal();
             }
         }
-    </script>    
+    </script>
 </body>
 </html>

@@ -27,6 +27,18 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.future import select
 from app.models import ChatModel  # ChatModel 가져오기
 from typing import List
+
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import BaseModel
+from typing import List, Optional
+import firebase_admin
+from firebase_admin import credentials, auth
+from google.cloud import vision
+import googlemaps
+from datetime import datetime, timedelta
+import jwt
+
 Base = declarative_base()
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
@@ -198,6 +210,46 @@ async def postlogin(
     print(f"Cookie set with token: {access_token[:20]}...")
     return response
 
+@app.post("/signup")
+async def postsignup(
+    username: str = Form(...),
+    password: str = Form(...),
+    confirm_password: str = Form(...),
+    db: AsyncSession = Depends(get_db)
+):
+    # 사용자 등록 데이터 검증
+    try:
+        user_data = UserCreateSchema(
+            username=username,
+            password=password,
+            confirm_password=confirm_password
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    # 중복된 사용자 확인
+    result = await db.execute(select(UserModel).where(UserModel.username == user_data.username))
+    existing_user = result.scalar_one_or_none()
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
+
+    # 사용자 생성
+    hashed_password = get_password_hash(user_data.password)
+    db_user = UserModel(
+        username=user_data.username,
+        password=hashed_password
+    )
+
+    try:
+        db.add(db_user)
+        await db.commit()
+        await db.refresh(db_user)
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database integrity error")
+
+    return {"msg": "Signup successful"}
+
 @app.get("/mypage")
 async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
     # 쿠키에서 토큰 가져오기
@@ -352,7 +404,7 @@ async def create_item(
         "available": True
     }
 
-@app.get("/items/{item_id}")
+@app.get("/items/{item_id}")    
 async def item_detail(item_id: int, request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ItemModel).where(ItemModel.id == item_id))
     item = result.scalar_one_or_none()
@@ -398,6 +450,53 @@ async def search(
 
 
 #Chatting 코드
+@app.post("/chat")
+async def create_chat(
+    request: Request,
+    item_id: int = Form(...),
+    buyer_id: int = Form(...),  # 구매자의 ID (로그인 사용자)
+    db: AsyncSession = Depends(get_db)
+):
+    # 아이템 정보 가져오기
+    result = await db.execute(select(ItemModel).where(ItemModel.id == item_id))
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # 기존 채팅방이 있는지 확인
+    existing_chat = await db.execute(
+        select(ChatModel).where(
+            ChatModel.user1_id == item.owner_id,
+            ChatModel.user2_id == buyer_id,
+            ChatModel.chatname == item.name
+        )
+    )
+    if existing_chat.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Chat room already exists")
+
+    # 채팅방 이름은 아이템 이름으로 설정
+    chatname = item.name
+
+    # 새로운 채팅방 생성
+    new_chat = ChatModel(
+        user1_id=item.owner_id,   # 판매자 (아이템 소유자)
+        user2_id=buyer_id,        # 구매자 (현재 로그인한 사용자)
+        chatname=chatname,
+        message="",               # 최초 메시지는 빈값으로 초기화
+        sent_at=dt.now()          # 현재 시각으로 설정
+    )
+
+    # 데이터베이스에 채팅방 정보 삽입
+    try:
+        db.add(new_chat)
+        await db.commit()
+        await db.refresh(new_chat)
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create chat. Error: " + str(e))
+
+    return {"chat_id": new_chat.id, "chatname": new_chat.chatname}
+
 # 새로운 메시지 추가
 @app.post("/chat/{chat_id}/messages")
 async def add_message(chat_id: int, request: Request, db: AsyncSession = Depends(get_db)):

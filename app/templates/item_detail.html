@@ -148,7 +148,29 @@
             </svg>
             나중에 보기
         </button>
-        <button class="contact-button" onclick="window.location.href='/chat/{{ item.owner_id or 0 }}';">연락해보기</button>
+        <button class="contact-button" onclick="createChat({ item_id });">연락해보기</button>
+
+<script>
+    async function createChat(item_id) {
+        try {
+            const buyerId = 1;  // 여기에 실제 로그인된 사용자의 ID를 동적으로 설정해야 합니다.
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `item_id=${item_id}&buyer_id=${user_id}`
+            });
+            if (!response.ok) {
+                throw new Error("Failed to create chat");
+            }
+            const data = await response.json();
+            window.location.href = `/chat/${data.chat_id}`;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+</script>
     </div>
 </body>
 </html>
