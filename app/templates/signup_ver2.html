@@ -1,4 +1,4 @@
-<!-- signup ver2.html -->
+<!-- signup_ver2.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -270,7 +270,8 @@
         <h2 id="greetingText" class="greeting hidden">Hi,<br><span id="userId"></span>!</h2>
         <div id="step1" class="sign-container">
             <h3 class="sub-title">Sign up</h3>
-            <input type="text" id="userIdInput" class="textbox" placeholder="Enter your ID">
+            <input type="email" id="userEmailInput" class="textbox" placeholder="Enter your email">
+            <input type="text" id="userNameInput" class="textbox" placeholder="Enter your name">
             <button id="nextBtn" class="next">Next →</button>
         </div>
 
@@ -302,7 +303,8 @@
             const step2 = document.getElementById('step2');
             const nextBtn = document.getElementById('nextBtn');
             const submitBtn = document.getElementById('submitBtn');
-            const userIdInput = document.getElementById('userIdInput');
+            const userEmailInput = document.getElementById('userEmailInput');
+            const userNameInput = document.getElementById('userNameInput');
             const password = document.getElementById('password');
             const confirmPassword = document.getElementById('confirmPassword');
             const successMessage = document.getElementById('successMessage');
@@ -313,7 +315,7 @@
             const footerSection = document.querySelector('.footer-section');
 
             nextBtn.addEventListener('click', function() {
-                if (userIdInput.value.trim() !== '') {
+                if (userEmailInput.value.trim() !== '' && userNameInput.value.trim() !== '') {
                     step1.classList.add('slide-to-left');
                     titleText.classList.add('slide-to-left');
                     setTimeout(() => {
@@ -323,11 +325,11 @@
                         step2.classList.add('slide-from-right');
                         greetingText.classList.remove('hidden');
                         greetingText.classList.add('show');
-                        userIdSpan.textContent = userIdInput.value.trim();
+                        userIdSpan.textContent = userNameInput.value.trim();
                         progressBar.style.width = '50%';
                     }, 500);
                 } else {
-                    alert('아이디를 입력해주세요.');
+                    alert('이메일과 이름을 입력해주세요.');
                 }
             });
 
@@ -339,7 +341,8 @@
                 } else {
                     // 데이터 준비
                     const data = new URLSearchParams();
-                    data.append('username', userIdInput.value.trim());
+                    data.append('email', userEmailInput.value.trim());
+                    data.append('name', userNameInput.value.trim());
                     data.append('password', password.value);
                     data.append('confirm_password', confirmPassword.value);
 

@@ -163,7 +163,7 @@
 
         <h2 class="title">Login</h2>
         <form id="login-form" enctype="multipart/form-data" action="/login" method="POST">
-            <input type="text" id="username" name="username" class="textbox" placeholder="Enter your username">
+            <input type="text" id="email" name="email" class="textbox" placeholder="Enter your email">
             <input type="password" id="password" name="password" class="textbox" placeholder="Enter your password">
             <button type="submit" class="submit">Login</button>
         </form>
@@ -186,9 +186,8 @@
             fetch(event.target.action, {
                 method: event.target.method,
                 body: formData,
-                credentials: 'include', // 이 줄 추가
+                credentials: 'include',
             })
-
 
             .then(response => {
                 if (response.ok) {
@@ -200,7 +199,7 @@
                 }
             })
             .catch(error => {
-                alert("Invalid username or password. Please try again."); // 오류 메시지 표시
+                alert("Invalid email or password. Please try again."); // 오류 메시지 표시
                 console.error("Error:", error);
             });
         });

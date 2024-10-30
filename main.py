@@ -14,9 +14,9 @@ from pydantic import BaseModel, validator
 import dropbox
 from dropbox.files import WriteMode
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from jose import jwt
-from jose.exceptions import JWTError, ExpiredSignatureError# 구축된 번들
+from jose.exceptions import JWTError, ExpiredSignatureError
 import json
 import os
 
@@ -50,6 +50,10 @@ dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"  # 실제 URL로 대체하세요
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+
+# Firebase 초기화
+cred = credentials.Certificate("app/config/flipshop-438500-firebase-adminsdk-c2uus-382e925176.json")
+firebase_admin.initialize_app(cred)
 
 class ItemSchema(BaseModel):
     name: str
@@ -92,7 +96,7 @@ class UserModel(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), unique=True, index=True)
-    password = Column(String(255))
+    fireid = Column(String(28), unique=True, index=True)
 
 class ItemModel(Base):
     __tablename__ = "items"
@@ -135,7 +139,7 @@ async def home(request: Request, response: Response, db: AsyncSession = Depends(
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             username = payload.get("username")
             if username:
-                # 토큰이 유효하고 사용자명이 있으면 인증된 것으로 가장
+                # 토큰이 유효하고 사용자명이 있으면 인증된 것으로 각시
                 user_is_authenticated = True
         except ExpiredSignatureError:
             # 토큰이 만료됨
@@ -144,7 +148,7 @@ async def home(request: Request, response: Response, db: AsyncSession = Depends(
             # 유효하지 않은 토큰
             pass
 
-    # 클라이언트 측 인증 상태 저장 (localStorage 활용 스크립트 추가)
+    # 클라이언트 컨념캐스트에 인증 상태 저장 (localStorage 활용 스크립트 추가)
     script = """
     <script>
         localStorage.setItem('user_is_authenticated', JSON.stringify(%s));
@@ -170,11 +174,43 @@ async def signup(request: Request):
 
 @app.post("/login")
 async def postlogin(
-    request: Request,
     response: Response,
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    token: str = Form(...),  # 클라이언트에서 Firebase ID 토큰을 받음
     db: AsyncSession = Depends(get_db)
 ):
+    try:
+        # Firebase 토큰 검증
+        decoded_token = auth.verify_id_token(token)
+        fireid = decoded_token.get('uid')
+
+        # 데이터베이스에서 사용자 찾기
+        result = await db.execute(select(UserModel).where(UserModel.fireid == fireid))
+        user = result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found in database")
+
+        # JWT 토큰 생성
+        access_token_expires = td(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user.id), "username": user.username},
+            expires_delta=access_token_expires
+        )
+
+        # 쿠키에 토큰 설정
+        response = RedirectResponse(url="/", status_code=302)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=False,
+            max_age=int(access_token_expires.total_seconds()),
+            path="/",
+            samesite="lax",
+            secure=False,
+        )
+        return response
+
+    except firebase_admin.exceptions.FirebaseError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     # 사용자 검증
     result = await db.execute(
         select(UserModel).where(UserModel.username == form_data.username)
@@ -193,18 +229,18 @@ async def postlogin(
         expires_delta=access_token_expires
     )
 
-    # 리다이렉트 응답 생성
+    # 리다이레크트 응답 생성
     response = RedirectResponse(url="/", status_code=302)
     
     # 쿠키 설정
     response.set_cookie(
         key="access_token",
         value=access_token,
-        httponly=False,  # JavaScript에서 접근해야 하므로 False
+        httponly=False,  # JavaScript에서 접근해야 하니까 False
         max_age=int(access_token_expires.total_seconds()),
         path="/",
         samesite="lax",
-        secure=False,  # 로컬 환경이므로 False
+        secure=False,  # 로컬 환경이라서 False
     )
     
     print(f"Cookie set with token: {access_token[:20]}...")
@@ -217,6 +253,31 @@ async def postsignup(
     confirm_password: str = Form(...),
     db: AsyncSession = Depends(get_db)
 ):
+    # 비밀번호 일치 검증
+    if password != confirm_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match")
+
+    try:
+        # Firebase에서 사용자 생성
+        user_record = auth.create_user(
+            email=username,
+            password=password,
+        )
+        fireid = user_record.uid
+
+        # 데이터베이스에 사용자 정보 저장
+        db_user = UserModel(
+            username=username,
+            fireid=fireid  # Firebase에서 발급받은 사용자 UID
+        )
+
+        db.add(db_user)
+        await db.commit()
+        await db.refresh(db_user)
+        return {"msg": "Signup successful"}
+
+    except firebase_admin.exceptions.FirebaseError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     # 사용자 등록 데이터 검증
     try:
         user_data = UserCreateSchema(
@@ -314,7 +375,7 @@ async def logout(request: Request, response: Response):
         samesite="lax"
     )
     
-    # localStorage 클리어를 위한 스크립트 트리거
+    # localStorage 클리언러를 위한 스크립트 트리거
     response.headers["HX-Trigger"] = json.dumps({
         "clearAuth": True,
     })
@@ -356,7 +417,7 @@ async def create_item(
         return {"msg": "File was empty, post created without file"}
     try:
         folder_path = f'/{owner_id}-{file.filename}'
-        # 폴더가 없으면 생성
+        # 포더가 없으면 생성
         try:
             dbx.files_get_metadata(folder_path)
         except dropbox.exceptions.ApiError as e:
@@ -385,7 +446,7 @@ async def create_item(
         item_date=item_date
     )
 
-    # 데이터베이스에 쿼리 실행
+    # 데이터베이스에 쿠리 실행
     try:
         db.add(new_item)
         await db.commit()
@@ -482,8 +543,8 @@ async def create_chat(
         user1_id=item.owner_id,   # 판매자 (아이템 소유자)
         user2_id=buyer_id,        # 구매자 (현재 로그인한 사용자)
         chatname=chatname,
-        message="",               # 최초 메시지는 빈값으로 초기화
-        sent_at=dt.now()          # 현재 시각으로 설정
+        message="",               # 최소 메시지는 빈값으로 초기화
+        sent_at=dt.now()          # 현재 시간으로 설정
     )
 
     # 데이터베이스에 채팅방 정보 삽입
@@ -507,7 +568,7 @@ async def add_message(chat_id: int, request: Request, db: AsyncSession = Depends
     if not user_id or not message:
         raise HTTPException(status_code=400, detail="User ID and message are required")
 
-    # 데이터베이스의 sent_at 필드는 기본값이 current_timestamp()이므로 따로 설정할 필요 없음
+    # 데이터베이스의 sent_at 필드는 기본값이 current_timestamp()이라서 다른 설정할 필요 없음
     new_message = ChatModel(
         user1_id=user_id if user_id == 1 else None,  # 실제 사용자의 식별자로 조정 필요
         user2_id=user_id if user_id == 2 else None,
@@ -544,7 +605,6 @@ async def chat_page(owner_id: int, request: Request, db: AsyncSession = Depends(
 
 
 
-
-if __name__ == "__main__":  # 이 코드가 직접 실행되었는가?
+if __name__ == "__main__":  # 이 코드가 지금 접속 실행되었는가?
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
