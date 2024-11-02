@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, select, or_, desc, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, EmailStr
 import dropbox
 from dropbox.files import WriteMode
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,7 +52,7 @@ engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 # Firebase 초기화
-cred = credentials.Certificate("app/config/flipshop-438500-firebase-adminsdk-c2uus-382e925176.json")
+cred = credentials.Certificate("app/config/flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json")
 firebase_admin.initialize_app(cred)
 
 class ItemSchema(BaseModel):
@@ -64,7 +64,8 @@ class ItemSchema(BaseModel):
     category: str
 
 class UserCreateSchema(BaseModel):
-    username: str
+    email: EmailStr
+    name: str
     password: str
     confirm_password: str
 
@@ -83,7 +84,7 @@ app = FastAPI()
 # CORS 설정 추가
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:8000/"],  # 실제 프론트엔드 도메인으로 변경
+    allow_origins=["http://127.0.0.1:8000"],  # 실제 프론트엔드 도메인으로 변경
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -95,7 +96,8 @@ class UserModel(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(255), unique=True, index=True)
+    email = Column(String(254), unique=True, index=True)
+    name = Column(String(20))
     fireid = Column(String(28), unique=True, index=True)
 
 class ItemModel(Base):
@@ -122,6 +124,7 @@ async def get_db():
         yield db
     finally:
         await db.close()
+
 @app.get("/")
 @app.get("/index")
 async def home(request: Request, response: Response, db: AsyncSession = Depends(get_db)):
@@ -137,8 +140,8 @@ async def home(request: Request, response: Response, db: AsyncSession = Depends(
         try:
             # JWT 디코딩
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            username = payload.get("username")
-            if username:
+            email = payload.get("email")
+            if email:
                 # 토큰이 유효하고 사용자명이 있으면 인증된 것으로 각시
                 user_is_authenticated = True
         except ExpiredSignatureError:
@@ -192,7 +195,7 @@ async def postlogin(
         # JWT 토큰 생성
         access_token_expires = td(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": str(user.id), "username": user.username},
+            data={"sub": str(user.id), "email": user.email},
             expires_delta=access_token_expires
         )
 
@@ -211,105 +214,46 @@ async def postlogin(
 
     except firebase_admin.exceptions.FirebaseError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    # 사용자 검증
-    result = await db.execute(
-        select(UserModel).where(UserModel.username == form_data.username)
-    )
-    user = result.scalar_one_or_none()
-    if not user or not verify_password(form_data.password, user.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    
-    # 토큰 생성
-    access_token_expires = td(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={
-            "sub": str(user.id),
-            "username": str(user.username),
-        },
-        expires_delta=access_token_expires
-    )
-
-    # 리다이레크트 응답 생성
-    response = RedirectResponse(url="/", status_code=302)
-    
-    # 쿠키 설정
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=False,  # JavaScript에서 접근해야 하니까 False
-        max_age=int(access_token_expires.total_seconds()),
-        path="/",
-        samesite="lax",
-        secure=False,  # 로컬 환경이라서 False
-    )
-    
-    print(f"Cookie set with token: {access_token[:20]}...")
-    return response
 
 @app.post("/signup")
 async def postsignup(
-    username: str = Form(...),
-    password: str = Form(...),
-    confirm_password: str = Form(...),
+    email: str = Form(...),
+    name: str = Form(...),
+    token: str = Form(...),
     db: AsyncSession = Depends(get_db)
 ):
-    # 비밀번호 일치 검증
-    if password != confirm_password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Passwords do not match")
+    try:
+        # Firebase ID 토큰 검증
+        decoded_token = auth.verify_id_token(token)
+        fireid = decoded_token.get('uid')
+    except firebase_admin.exceptions.FirebaseError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    # 이메일 중복 확인
+    existing_user = await db.execute(select(UserModel).where(UserModel.email == email))
+    if existing_user.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="이메일이 이미 사용 중입니다.")
 
     try:
-        # Firebase에서 사용자 생성
-        user_record = auth.create_user(
-            email=username,
-            password=password,
-        )
-        fireid = user_record.uid
-
         # 데이터베이스에 사용자 정보 저장
         db_user = UserModel(
-            username=username,
-            fireid=fireid  # Firebase에서 발급받은 사용자 UID
+            email=email,
+            name=name,
+            fireid=fireid  # Firebase UID
         )
 
         db.add(db_user)
         await db.commit()
         await db.refresh(db_user)
-        return {"msg": "Signup successful"}
+        return {"msg": "회원가입이 성공적으로 완료되었습니다."}
 
-    except firebase_admin.exceptions.FirebaseError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    # 사용자 등록 데이터 검증
-    try:
-        user_data = UserCreateSchema(
-            username=username,
-            password=password,
-            confirm_password=confirm_password
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-    # 중복된 사용자 확인
-    result = await db.execute(select(UserModel).where(UserModel.username == user_data.username))
-    existing_user = result.scalar_one_or_none()
-    if existing_user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
-
-    # 사용자 생성
-    hashed_password = get_password_hash(user_data.password)
-    db_user = UserModel(
-        username=user_data.username,
-        password=hashed_password
-    )
-
-    try:
-        db.add(db_user)
-        await db.commit()
-        await db.refresh(db_user)
     except IntegrityError:
         await db.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database integrity error")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="데이터베이스에 이미 존재하는 이메일입니다.")
 
-    return {"msg": "Signup successful"}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"서버 오류: {str(e)}")
 
 @app.get("/mypage")
 async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
@@ -326,20 +270,20 @@ async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
     try:
         # JWT 디코딩
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("username")
+        email = payload.get("email")
         
-        if not username:
-            print("No username in token payload")
+        if not email:
+            print("No email in token payload")
             return RedirectResponse(url="/login", status_code=307)
 
         # 사용자 정보 조회
         result = await db.execute(
-            select(UserModel).where(UserModel.username == username)
+            select(UserModel).where(UserModel.email == email)
         )
         user = result.scalar_one_or_none()
         
         if not user:
-            print(f"No user found for username: {username}")
+            print(f"No user found for email: {email}")
             return RedirectResponse(url="/login", status_code=307)
 
         return templates.TemplateResponse(
@@ -601,9 +545,6 @@ async def chat_page(owner_id: int, request: Request, db: AsyncSession = Depends(
         raise HTTPException(status_code=404, detail="Owner not found")
 
     return templates.TemplateResponse("chat.html", {"request": request, "owner": owner})
-
-
-
 
 if __name__ == "__main__":  # 이 코드가 지금 접속 실행되었는가?
     import uvicorn

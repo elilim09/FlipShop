@@ -96,8 +96,12 @@
         }
 
         .sign-container {
-            margin: 1.5rem 0;
-            transition: transform 0.5s ease, opacity 0.5s ease;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        #step2 {
+            opacity: 0;
         }
 
         .sub-title {
@@ -136,12 +140,12 @@
             font-size: 16px;
             font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(98, 126, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         .next:hover, .next:focus, .submit:hover, .submit:focus {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(98, 126, 255, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
         }
 
         .footer-section {
@@ -256,6 +260,161 @@
             }
         }
     </style>
+    <script type="module">
+        // Firebase SDK 모듈 불러오기
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
+
+        // Firebase 초기화
+        const firebaseConfig = {
+            apiKey: "AIzaSyBnKr6aAItI7FFSNCnsenwxv08ZgWabCvU",
+            authDomain: "flipshop-438500.firebaseapp.com",
+            projectId: "flipshop-438500",
+            storageBucket: "flipshop-438500.firebasestorage.app",
+            messagingSenderId: "790066540754",
+            appId: "1:790066540754:web:93a4b0de57e6f9ae1cfd0b",
+            measurementId: "G-D9B7EGY8HP"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const analytics = getAnalytics(app);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const userEmailInput = document.getElementById('userEmailInput');
+            const userNameInput = document.getElementById('userNameInput');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+            const successMessage = document.getElementById('successMessage');
+            const progressBar = document.getElementById('progressBar');
+            const titleText = document.getElementById('titleText');
+            const greetingText = document.getElementById('greetingText');
+            const userIdSpan = document.getElementById('userId');
+            const footerSection = document.querySelector('.footer-section');
+
+            // 이메일 유효성 검사 함수 추가
+            function isValidEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            nextBtn.addEventListener('click', function(e) {
+                e.preventDefault(); // 기본 동작 방지
+                
+                const email = userEmailInput.value.trim();
+                const name = userNameInput.value.trim();
+                
+                // 입력값 검증 강화
+                if (email === '' || name === '') {
+                    alert('이메일과 이름을 모두 입력해주세요.');
+                    return;
+                }
+
+                if (!isValidEmail(email)) {
+                    alert('유효한 이메일 주소를 입력해주세요.');
+                    return;
+                }
+
+                // 애니메이션 및 상태 전환
+                step1.style.opacity = '0';
+                titleText.style.opacity = '0';
+                
+                setTimeout(() => {
+                    step1.classList.add('hidden');
+                    titleText.classList.add('hidden');
+                    step2.classList.remove('hidden');
+                    greetingText.classList.remove('hidden');
+                    
+                    // 트랜지션을 위한 setTimeout
+                    setTimeout(() => {
+                        step2.style.opacity = '1';
+                        greetingText.classList.add('show');
+                        userIdSpan.textContent = name;
+                        progressBar.style.width = '50%';
+                    }, 50);
+                }, 500);
+            });
+
+            submitBtn.addEventListener('click', function() {
+                if (password.value === '' || confirmPassword.value === '') {
+                    alert('비밀번호를 입력해주세요.');
+                } else if (password.value !== confirmPassword.value) {
+                    alert('비밀번호가 일치하지 않습니다.');
+                } else {
+                    // Firebase 인증 - 사용자 생성
+                    createUserWithEmailAndPassword(auth, userEmailInput.value, password.value)
+                        .then((userCredential) => {
+                            // Firebase ID 토큰 가져오기
+                            return userCredential.user.getIdToken();
+                        })
+                        .then((idToken) => {
+                            // 데이터 준비
+                            const data = new URLSearchParams();
+                            data.append('email', userEmailInput.value.trim());
+                            data.append('name', userNameInput.value.trim());
+                            data.append('token', idToken);
+
+                            // 백엔드로 POST 요청 전송
+                            return fetch('/signup', {
+                                method: 'POST',
+                                body: data,
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                            });
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then((errorData) => {
+                                    const errorMessage = Array.isArray(errorData.detail)
+                                        ? errorData.detail.map(error => error.msg).join(', ')
+                                        : errorData.detail || '회원가입 실패';
+                                    throw new Error(errorMessage);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            // 회원가입 성공 처리
+                            step2.classList.add('slide-to-left');
+                            greetingText.classList.add('slide-to-left');
+                            setTimeout(() => {
+                                step2.classList.add('hidden');
+                                greetingText.classList.add('hidden');
+                                successMessage.classList.remove('hidden');
+                                successMessage.classList.add('show');
+                                progressBar.style.width = '100%';
+                                footerSection.classList.add('hidden');
+                            }, 500);
+                        })
+                        .catch(error => {
+                            if (error.message.includes('auth/email-already-in-use')) {
+                                alert('이미 사용 중인 이메일 주소입니다. 다른 이메일을 사용해 주세요.');
+                            } else if (error.message.includes('auth/invalid-email')) {
+                                alert('유효하지 않은 이메일 주소입니다. 다시 확인해 주세요.');
+                            } else if (error.message.includes('Field required')) {
+                                alert('모든 필드를 입력해 주세요.');
+                            } else {
+                                alert('회원가입 중 오류가 발생했습니다: ' + error.message);
+                            }
+                        });
+                }
+            });
+
+            const inputs = document.querySelectorAll('.textbox');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    setTimeout(() => {
+                        this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                });
+            });
+        });
+    </script>
 </head>
 <body>
     <div class="background-color"></div>
@@ -296,109 +455,5 @@
             <div class="progress" id="progressBar"></div>
         </div>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const step1 = document.getElementById('step1');
-            const step2 = document.getElementById('step2');
-            const nextBtn = document.getElementById('nextBtn');
-            const submitBtn = document.getElementById('submitBtn');
-            const userEmailInput = document.getElementById('userEmailInput');
-            const userNameInput = document.getElementById('userNameInput');
-            const password = document.getElementById('password');
-            const confirmPassword = document.getElementById('confirmPassword');
-            const successMessage = document.getElementById('successMessage');
-            const progressBar = document.getElementById('progressBar');
-            const titleText = document.getElementById('titleText');
-            const greetingText = document.getElementById('greetingText');
-            const userIdSpan = document.getElementById('userId');
-            const footerSection = document.querySelector('.footer-section');
-
-            nextBtn.addEventListener('click', function() {
-                if (userEmailInput.value.trim() !== '' && userNameInput.value.trim() !== '') {
-                    step1.classList.add('slide-to-left');
-                    titleText.classList.add('slide-to-left');
-                    setTimeout(() => {
-                        step1.classList.add('hidden');
-                        titleText.classList.add('hidden');
-                        step2.classList.remove('hidden');
-                        step2.classList.add('slide-from-right');
-                        greetingText.classList.remove('hidden');
-                        greetingText.classList.add('show');
-                        userIdSpan.textContent = userNameInput.value.trim();
-                        progressBar.style.width = '50%';
-                    }, 500);
-                } else {
-                    alert('이메일과 이름을 입력해주세요.');
-                }
-            });
-
-            submitBtn.addEventListener('click', function() {
-                if (password.value === '' || confirmPassword.value === '') {
-                    alert('비밀번호를 입력해주세요.');
-                } else if (password.value !== confirmPassword.value) {
-                    alert('비밀번호가 일치하지 않습니다.');
-                } else {
-                    // 데이터 준비
-                    const data = new URLSearchParams();
-                    data.append('email', userEmailInput.value.trim());
-                    data.append('name', userNameInput.value.trim());
-                    data.append('password', password.value);
-                    data.append('confirm_password', confirmPassword.value);
-
-                    // 백엔드로 POST 요청 전송
-                    fetch('/signup', {
-                        method: 'POST',
-                        body: data,
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                    })
-                    .then(response => {
-                        const contentType = response.headers.get('content-type');
-                        if (!response.ok) {
-                            if (contentType && contentType.includes('application/json')) {
-                                // 응답이 JSON 형식인 경우
-                                return response.json().then(errData => {
-                                    throw new Error(errData.detail || 'Signup failed');
-                                });
-                            } else {
-                                // 응답이 JSON이 아닌 경우 텍스트로 처리
-                                return response.text().then(errText => {
-                                    throw new Error(errText || 'Signup failed');
-                                });
-                            }
-                        }
-                        return response.json(); // 정상적인 응답이 JSON 형식일 것으로 기대
-                    })
-                    .then(data => {
-                        // 회원가입 성공 처리
-                        step2.classList.add('slide-to-left');
-                        greetingText.classList.add('slide-to-left');
-                        setTimeout(() => {
-                            step2.classList.add('hidden');
-                            greetingText.classList.add('hidden');
-                            successMessage.classList.remove('hidden');
-                            successMessage.classList.add('show');
-                            progressBar.style.width = '100%';
-                            footerSection.classList.add('hidden');
-                        }, 500);
-                    })
-                    .catch(error => {
-                        alert('회원가입 중 오류가 발생했습니다: ' + error.message);
-                    });
-                }
-            });
-
-            const inputs = document.querySelectorAll('.textbox');
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    setTimeout(() => {
-                        this.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 300);
-                });
-            });
-        });
-    </script>
 </body>
 </html>

@@ -151,6 +151,80 @@
             }
         }
     </style>
+
+        <!-- Firebase SDK 모듈 추가 -->
+        <script type="module">
+            // Firebase SDK 모듈 불러오기
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+            import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+            import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
+    
+            // Firebase 초기화
+            const firebaseConfig = {
+            apiKey: "AIzaSyBnKr6aAItI7FFSNCnsenwxv08ZgWabCvU",
+            authDomain: "flipshop-438500.firebaseapp.com",
+            projectId: "flipshop-438500",
+            storageBucket: "flipshop-438500.firebasestorage.app",
+            messagingSenderId: "790066540754",
+            appId: "1:790066540754:web:93a4b0de57e6f9ae1cfd0b",
+            measurementId: "G-D9B7EGY8HP"
+            };
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const analytics = getAnalytics(app);
+    
+            document.addEventListener('DOMContentLoaded', function() {
+                const loginForm = document.getElementById('login-form');
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+    
+                loginForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); // 기본 폼 제출 방지
+    
+                    const email = emailInput.value.trim();
+                    const password = passwordInput.value;
+    
+                    if (email === '' || password === '') {
+                        alert('이메일과 비밀번호를 모두 입력해주세요.');
+                        return;
+                    }
+    
+                    // Firebase Authentication으로 로그인
+                    signInWithEmailAndPassword(auth, email, password)
+                        .then((userCredential) => {
+                            // 로그인 성공 시 Firebase ID 토큰 가져오기
+                            return userCredential.user.getIdToken();
+                        })
+                        .then((idToken) => {
+                            // 백엔드로 토큰 전송
+                            const data = new URLSearchParams();
+                            data.append('token', idToken);
+    
+                            return fetch('/login', {
+                                method: 'POST',
+                                body: data,
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                            });
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                // 로그인 성공 시 홈 페이지로 리디렉션
+                                window.location.href = "/";
+                            } else {
+                                return response.json().then((errorData) => {
+                                    const errorMessage = errorData.detail || '로그인 실패';
+                                    throw new Error(errorMessage);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            alert('로그인 중 오류가 발생했습니다: ' + error.message);
+                        });
+                });
+            });
+        </script>
 </head>
 <body>
     <div class="background-color"></div>
@@ -162,8 +236,8 @@
         </div>
 
         <h2 class="title">Login</h2>
-        <form id="login-form" enctype="multipart/form-data" action="/login" method="POST">
-            <input type="text" id="email" name="email" class="textbox" placeholder="Enter your email">
+        <form id="login-form">
+            <input type="email" id="email" name="email" class="textbox" placeholder="Enter your email">
             <input type="password" id="password" name="password" class="textbox" placeholder="Enter your password">
             <button type="submit" class="submit">Login</button>
         </form>
@@ -199,7 +273,6 @@
                 }
             })
             .catch(error => {
-                alert("Invalid email or password. Please try again."); // 오류 메시지 표시
                 console.error("Error:", error);
             });
         });
