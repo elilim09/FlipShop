@@ -758,3 +758,4 @@ async def chat_page(chat_id: int, request: Request, db: AsyncSession = Depends(g
 if __name__ == "__main__":  # 이 코드가 지금 접속 실행되었는가?
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    # 커밋 테스트 주석
