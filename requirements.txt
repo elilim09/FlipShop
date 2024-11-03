@@ -9,4 +9,8 @@ pydantic
 jinja2
 httpx
 uvicorn
-passib
+os
+data
+AsyncSession
+json
+passlib
