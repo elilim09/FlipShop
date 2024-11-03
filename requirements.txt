@@ -9,8 +9,4 @@ pydantic
 jinja2
 httpx
 uvicorn
-os
-data
-AsyncSession
-json
 passlib
