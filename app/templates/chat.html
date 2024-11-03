@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>채팅방</title>
+    <link rel="icon" href="https://i.ibb.co/fFMYq7k/Flip-Shop.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -259,7 +260,7 @@
             }
         });
     });
-    
+
     async function sendEvaluation(status) {
         try {
             const response = await fetch(`/chat/${chatId}/evaluate`, {
@@ -269,7 +270,7 @@
                 },
                 body: JSON.stringify({ status: status })
             });
-        
+
             if (response.ok) {
                 const data = await response.json();
                 Swal.fire('평가가 완료되었습니다.', data.message, 'success');

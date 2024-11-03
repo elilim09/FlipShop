@@ -32,7 +32,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
 SECRET_KEY = 'dkgkqrurgkrhtlvek'  # 실제 키로 대체하세요
 ALGORITHM = "HS256"
 
-DROP_API_KEY = "sl.B_8vB_-E9x-UVxJ-lpHQbTDPCfkOUdePmD3duTIeGd5E6tiBz80LCXOq7tghyJWECLbOhXZ2IIF62A_nKKSU_2qn47aHIpRybjyZayYuPfYD7shfm_03B2LNe0QkaPYv2kiyewshpADysP0svRJ-7ro"  # 실제 키로 대체하세요
+DROP_API_KEY = "sl.B_8hJI2YyIbjrRocA9jZSXusEbKuGYCuQOeQ5ioSLlk6Mis_MpedE6O5lmlfMnB4hENFqXilBMfWQM7bVX2Ih1CJqVHaoh7YkghOj7VZjvMAnGMN89YQQLNFK8hKskVIzcxqiSb7f7gQaNJDNbq2CFA"  # 실제 키로 대체하세요
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"  # 실제 URL로 대체하세요
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
@@ -717,6 +717,7 @@ async def get_messages(
 #사용자의 채팅방 목록조회하기
 @app.get("/chats", response_model=List[dict])
 async def get_user_chats(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: UserModel = Depends(get_current_user)
 ):
@@ -750,7 +751,12 @@ async def get_user_chats(
             "sent_at": latest_msg.sent_at.strftime("%Y-%m-%d %H:%M:%S") if latest_msg else chat.sent_at.strftime("%Y-%m-%d %H:%M:%S")
         })
 
-    return chat_list
+    # 템플릿 렌더링
+    return templates.TemplateResponse("chat_list.html", {
+        "request": request,
+        "chats": chat_list,
+        "user_id": current_user.id
+    })
 
 
 #채팅방페이지
@@ -779,7 +785,7 @@ async def evaluate_chat(
     current_user: UserModel = Depends(get_current_user)
 ):
     status = evaluation.status
-    
+
     # 채팅방 정보 가져오기
     result = await db.execute(select(ChatModel).where(ChatModel.id == chat_id))
     chat = result.scalar_one_or_none()
