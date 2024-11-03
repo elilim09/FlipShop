@@ -38,8 +38,24 @@ SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.a
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
+import os
+import json
+import firebase_admin
+from firebase_admin import credentials
+
+# 환경 변수에서 Firebase 시크릿 읽기
+firebase_json = os.getenv('FIREBASE_API')
+
+if firebase_json:
+    # 환경 변수에서 가져온 경우
+    with open('flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json', 'w') as f:
+        f.write(firebase_json)
+    cred = credentials.Certificate('flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json')
+else:
+    # 로컬 JSON 파일 사용
+    cred = credentials.Certificate('app/config/flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json')  # 실제 파일 경로로 변경하세요
+
 # Firebase 초기화
-cred = credentials.Certificate("app/config/flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json")
 firebase_admin.initialize_app(cred)
 
 class ItemSchema(BaseModel):
