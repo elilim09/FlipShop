@@ -1,5 +1,5 @@
 from sqlite3 import IntegrityError
-from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile, Response, Query, Cookie
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Form, File, UploadFile, Response, Query, Cookie, Body
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from datetime import timezone
@@ -7,7 +7,7 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, select, or_, desc, DateTime
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, select, and_, or_, desc, DateTime, func, UniqueConstraint, delete
 from sqlalchemy.ext.declarative import declarative_base
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
 from pydantic import BaseModel, validator, EmailStr
@@ -32,7 +32,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
 SECRET_KEY = 'dkgkqrurgkrhtlvek'  # 실제 키로 대체하세요
 ALGORITHM = "HS256"
 
-DROP_API_KEY = "sl.B__kfvnwwib3jVBWPTFOQQPhF2EQlWuH956JQOMHOpDobgc88kwT5oILkUqxMI_05PSgc4WdptXeUzQdMbfl1AtXFF6hQrJQN9Xnr0tVLJ3FIR6V2YNW-ecDpEA16426RQBC49KoKVOyRouXQWMAyQU"  # 실제 키로 대체하세요
+DROP_API_KEY = "sl.B_8vB_-E9x-UVxJ-lpHQbTDPCfkOUdePmD3duTIeGd5E6tiBz80LCXOq7tghyJWECLbOhXZ2IIF62A_nKKSU_2qn47aHIpRybjyZayYuPfYD7shfm_03B2LNe0QkaPYv2kiyewshpADysP0svRJ-7ro"  # 실제 키로 대체하세요
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"  # 실제 URL로 대체하세요
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
@@ -87,8 +87,10 @@ class UserModel(Base):
     name = Column(String(20))
     fireid = Column(String(28), unique=True, index=True)
     bookmarks = Column(Text, nullable=True)
+    trans = Column(Integer, default=0)
+    cheats = Column(Integer, default=0)
 
-    # 관계 설정 (optional)
+    # 관계 설정
     items = relationship("ItemModel", back_populates="owner")
 
 class ItemModel(Base):
@@ -110,18 +112,23 @@ class ItemModel(Base):
 
 
 class ChatModel(Base):
-    __tablename__ = "chat"  # 테이블 이름 수정
+    __tablename__ = "chat"
 
     id = Column(Integer, primary_key=True, index=True)
-    user1_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # 발신자
-    user2_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # 수신자
+    item_id = Column(Integer, ForeignKey('items.id'))  # 이 컬럼이 필요함
+    user1_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user2_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     chatname = Column(String(100), nullable=True)
     message = Column(Text, nullable=False)
     sent_at = Column(DateTime, default=dt.now(timezone.utc), nullable=True)
 
-    # 관계 설정 (optional)
+    # 기존 관계 설정
     sender = relationship("UserModel", foreign_keys=[user1_id])
     receiver = relationship("UserModel", foreign_keys=[user2_id])
+    item = relationship("ItemModel")  # 아이템과의 관계 설정 (optional)
+
+class EvaluationRequest(BaseModel):
+    status: str  # 'success' 또는 'fraud'
 
 
 @app.on_event("startup")
@@ -573,9 +580,12 @@ async def search_category(
 
 
 # Chatting 코드
+# 필요한 임포트 추가
+from sqlalchemy import and_, or_
+
+# 수정된 create_chat 함수
 @app.post("/chat")
 async def create_chat(
-    request: Request,
     item_id: int = Form(...),
     db: AsyncSession = Depends(get_db),
     current_user: UserModel = Depends(get_current_user)
@@ -587,29 +597,35 @@ async def create_chat(
         raise HTTPException(status_code=404, detail="Item not found")
 
     # 아이템 소유자 (판매자) 정보 가져오기
-    result = await db.execute(select(UserModel).where(UserModel.id == item.owner_id))
-    seller = result.scalar_one_or_none()
+    seller = await db.get(UserModel, item.owner_id)
     if not seller:
         raise HTTPException(status_code=404, detail="Seller not found")
 
-    # 채팅방 이름 생성 (예: itemid_user1id_user2id)
-    chatname = f"{item.id}_{min(current_user.id, seller.id)}_{max(current_user.id, seller.id)}"
+    # 사용자 ID 정렬하여 chatname 생성
+    user_ids = sorted([current_user.id, seller.id])
+    chatname = f"{item.id}_{user_ids[0]}_{user_ids[1]}"
 
     # 이미 채팅방이 존재하는지 확인
     existing_chat = await db.execute(
         select(ChatModel).where(
+            ChatModel.item_id == item.id,
             ChatModel.chatname == chatname,
-            ChatModel.user1_id == seller.id,
-            ChatModel.user2_id == current_user.id
+            or_(
+                and_(ChatModel.user1_id == seller.id, ChatModel.user2_id == current_user.id),
+                and_(ChatModel.user1_id == current_user.id, ChatModel.user2_id == seller.id)
+            )
         )
     )
-    if existing_chat.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Chat room already exists")
+    existing_chat = existing_chat.first()
+    if existing_chat:
+        # 채팅방이 이미 존재하므로 해당 채팅방의 ID를 반환
+        return {"chat_id": existing_chat.id, "chatname": existing_chat.chatname}
 
-    # 새로운 채팅방 생성 (첫 메시지는 빈 메시지로 초기화)
+    # 새로운 채팅방 생성
     new_chat = ChatModel(
-        user1_id=seller.id,
-        user2_id=current_user.id,
+        item_id=item.id,
+        user1_id=user_ids[0],
+        user2_id=user_ids[1],
         chatname=chatname,
         message="",  # 첫 메시지는 빈 값
         sent_at=dt.now(timezone.utc)
@@ -645,6 +661,7 @@ async def send_message(
 
     # 메시지 생성
     new_message = ChatModel(
+        item_id=chat.item_id,  # item_id 추가
         user1_id=current_user.id,
         user2_id=chat.user2_id if current_user.id == chat.user1_id else chat.user1_id,
         chatname=chat.chatname,
@@ -754,8 +771,57 @@ async def chat_page(chat_id: int, request: Request, db: AsyncSession = Depends(g
 
     return templates.TemplateResponse("chat.html", {"request": request, "chat_id": chat_id, "user_id": current_user.id})
 
+@app.post("/chat/{chat_id}/evaluate")
+async def evaluate_chat(
+    chat_id: int,
+    evaluation: EvaluationRequest,  # Pydantic 모델로 요청 검증
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    status = evaluation.status
+    
+    # 채팅방 정보 가져오기
+    result = await db.execute(select(ChatModel).where(ChatModel.id == chat_id))
+    chat = result.scalar_one_or_none()
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat room not found")
+
+    # 채팅 참여자 확인
+    other_user_id = chat.user2_id if chat.user1_id == current_user.id else chat.user1_id
+
+    # 상대방 정보 가져오기
+    result = await db.execute(select(UserModel).where(UserModel.id == other_user_id))
+    other_user = result.scalar_one_or_none()
+    if not other_user:
+        raise HTTPException(status_code=404, detail="Other user not found")
+
+    # 거래 평가 반영 (cheats 컬럼 증가 등)
+    if status == 'fraud':
+        other_user.cheats += 1
+    other_user.trans += 1
+    current_user.trans += 1
+
+    # 평가 메시지 전송
+    evaluation_message = ChatModel(
+        item_id=chat.item_id,
+        user1_id=current_user.id,
+        user2_id=other_user_id,
+        chatname=chat.chatname,
+        message=f"{current_user.name}님이 거래를 {'성공' if status == 'success' else '사기'}로 평가하였습니다.",
+        sent_at=dt.now(timezone.utc)
+    )
+    db.add(evaluation_message)
+
+    # 평가 완료 여부 확인 및 채팅방 삭제
+    if current_user.trans > 0 and other_user.trans > 0:  # 실제 평가 완료 조건에 맞게 수정
+        await db.execute(delete(ChatModel).where(ChatModel.id == chat_id))
+        await db.commit()
+        return {"msg": "채팅방이 평가 완료 후 삭제되었습니다."}
+
+    await db.commit()
+    return {"msg": "평가가 완료되었습니다."}
+
 
 if __name__ == "__main__":  # 이 코드가 지금 접속 실행되었는가?
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-    # 커밋 테스트 주석

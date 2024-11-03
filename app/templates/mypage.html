@@ -4,42 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Page - FlipShop</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #00FFB2;
-            --primary-dark: #00cc8e;
-            --secondary-color: #F5A623;
-            --background-color: #F8F9FA;
-            --text-color: #2D3436;
-            --light-gray: #f0f2f5;
-            --border-radius: 16px;
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
-            --shadow-md: 0 8px 16px rgba(0,0,0,0.06);
+            --primary-color: #00B894;
+            --primary-light: #00FFB2;
+            --primary-dark: #00896C;
+            --secondary-color: #FFA726;
+            --background-color: #F9FAFB;
+            --text-color: #1A1A1A;
+            --light-gray: #F1F5F9;
+            --border-radius-lg: 20px;
+            --border-radius-md: 16px;
+            --border-radius-sm: 12px;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+            --shadow-hover: 0 12px 32px rgba(0,0,0,0.12);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            font-family: 'Montserrat', sans-serif;
+            font-family: 'Pretendard', sans-serif;
             margin: 0;
             padding: 0;
             background-color: var(--background-color);
             color: var(--text-color);
-            line-height: 1.7;
+            line-height: 1.6;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 40px;
-            background-color: #ffffff;
+            padding: 16px 40px;
+            background-color: rgba(255, 255, 255, 0.98);
             box-shadow: var(--shadow-sm);
             position: sticky;
             top: 0;
             z-index: 1000;
-            backdrop-filter: blur(8px);
-            background-color: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
         }
 
         .header-left {
@@ -49,55 +53,51 @@
         }
 
         .header img {
-            height: 44px;
+            height: 40px;
             transition: var(--transition);
         }
 
-        .header img:hover {
-            transform: scale(1.05);
-        }
-
         .header h1 {
-            font-size: 26px;
-            margin: 0;
-            color: #000000;
+            font-size: 24px;
+            color: var(--text-color);
             font-weight: 700;
-            letter-spacing: -0.5px;
+            margin: 0;
         }
 
         .content {
             max-width: 1200px;
-            margin: 48px auto;
+            margin: 40px auto;
             padding: 0 24px;
         }
 
         .profile-section {
             background: #ffffff;
-            border-radius: var(--border-radius);
+            border-radius: var(--border-radius-lg);
             padding: 40px;
             box-shadow: var(--shadow-md);
             margin-bottom: 48px;
             border: 1px solid rgba(0,0,0,0.04);
+            position: relative;
+            overflow: hidden;
+            background-color: linear-gradient(135deg, rgb(0, 184, 148, 0.5), rgb(0, 255, 178, 0.5));
+        }
+
+        .profile-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
         }
 
         .profile-header {
-            display: flex;
-            justify-content: space-between;
+            position: relative;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
             align-items: center;
-            margin-bottom: 40px;
-        }
-
-        .profile-header h2 {
-            font-size: 28px;
-            font-weight: 700;
-            margin: 0;
-            letter-spacing: -0.5px;
-        }
-
-        .profile-info {
-            display: flex;
-            align-items: center;
-            gap: 40px;
+            gap: 32px;
+            margin-bottom: 32px;
         }
 
         .profile-image {
@@ -105,66 +105,78 @@
         }
 
         .profile-image img {
-            width: 140px;
-            height: 140px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             object-fit: cover;
-            border: 4px solid var(--light-gray);
-            transition: var(--transition);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .profile-image img:hover {
-            transform: scale(1.05);
+            border: 4px solid #ffffff;
             box-shadow: var(--shadow-md);
+            transition: var(--transition);
         }
 
-        .profile-details {
-            flex: 1;
+        .profile-image::after {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-light);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .profile-image:hover::after {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+
+        .profile-details h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            color: var(--text-color);
         }
 
         .profile-details p {
-            margin: 12px 0;
             font-size: 16px;
-            color: #4a5568;
-        }
-
-        .profile-details strong {
-            color: #2d3748;
-            font-weight: 600;
+            color: #666;
+            margin: 0;
         }
 
         .actions {
             display: flex;
-            gap: 16px;
+            gap: 12px;
         }
 
         .actions button {
-            background-color: var(--primary-color);
-            border: none;
-            border-radius: 30px;
-            color: #000;
-            padding: 14px 28px;
+            padding: 12px 24px;
+            border-radius: var(--border-radius-sm);
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
-            font-family: 'Montserrat', sans-serif;
-            letter-spacing: 0.3px;
+            border: none;
+            font-family: 'Pretendard', sans-serif;
         }
 
-        .actions button:hover {
+        .actions button:first-child {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+
+        .actions button:first-child:hover {
             background-color: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-md);
         }
 
-        .actions button.logout {
+        .actions .logout {
             background-color: var(--light-gray);
+            color: var(--text-color);
         }
 
-        .actions button.logout:hover {
-            background-color: #e2e8f0;
+        .actions .logout:hover {
+            background-color: #E2E8F0;
+            transform: translateY(-2px);
         }
 
         .section-title {
@@ -173,43 +185,46 @@
             margin: 48px 0 24px 0;
             display: flex;
             align-items: center;
-            gap: 12px;
-            letter-spacing: -0.5px;
+            color: var(--text-color);
+            position: relative;
+            padding-left: 16px;
         }
 
         .section-title::before {
             content: "";
-            width: 5px;
-            height: 28px;
-            background-color: var(--primary-color);
-            display: inline-block;
-            border-radius: 3px;
+            position: absolute;
+            left: 0;
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(to bottom, var(--primary-color), var(--primary-light));
+            border-radius: 2px;
         }
 
         .item-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 28px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
             margin-top: 24px;
         }
 
         .item {
             background-color: #ffffff;
-            border-radius: var(--border-radius);
+            border-radius: var(--border-radius-md);
             overflow: hidden;
             box-shadow: var(--shadow-sm);
             transition: var(--transition);
             border: 1px solid rgba(0,0,0,0.04);
+            position: relative;
         }
 
         .item:hover {
-            transform: translateY(-6px);
-            box-shadow: var(--shadow-md);
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-hover);
         }
 
         .item img {
             width: 100%;
-            height: 220px;
+            height: 200px;
             object-fit: cover;
             transition: var(--transition);
         }
@@ -219,14 +234,15 @@
         }
 
         .item .details {
-            padding: 24px;
+            padding: 20px;
         }
 
         .item .details h4 {
-            font-size: 20px;
-            margin: 0 0 16px 0;
+            font-size: 18px;
+            margin: 0 0 12px 0;
             font-weight: 700;
-            letter-spacing: -0.3px;
+            color: var(--text-color);
+            line-height: 1.4;
         }
 
         .item .details .categories {
@@ -238,25 +254,35 @@
 
         .item .details .category {
             background-color: var(--light-gray);
-            padding: 6px 14px;
-            border-radius: 20px;
+            padding: 6px 12px;
+            border-radius: var(--border-radius-sm);
             font-size: 13px;
-            color: #4a5568;
+            color: var(--primary-dark);
             font-weight: 500;
             transition: var(--transition);
         }
 
         .item .details .category:hover {
-            background-color: #e2e8f0;
-            transform: translateY(-1px);
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            transform: translateY(-2px);
         }
 
         .item .details .price {
             color: var(--secondary-color);
             font-weight: 700;
             font-size: 20px;
-            margin-top: 16px;
-            letter-spacing: -0.3px;
+            margin: 16px 0 0 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .item .details .price::after {
+            content: '원';
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
         }
 
         @media (max-width: 768px) {
@@ -266,36 +292,35 @@
 
             .content {
                 padding: 0 16px;
-                margin: 32px auto;
+                margin: 24px auto;
             }
 
             .profile-section {
                 padding: 24px;
+                border-radius: var(--border-radius-md);
             }
 
-            .profile-info {
-                flex-direction: column;
+            .profile-header {
+                grid-template-columns: 1fr;
                 text-align: center;
-                gap: 24px;
+                gap: 20px;
             }
 
-            .profile-image img {
-                width: 120px;
-                height: 120px;
+            .profile-image {
+                margin: 0 auto;
             }
 
             .actions {
                 justify-content: center;
-                flex-wrap: wrap;
-            }
-
-            .item-list {
-                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-                gap: 20px;
             }
 
             .section-title {
-                font-size: 22px;
+                font-size: 20px;
+            }
+
+            .item-list {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 16px;
             }
         }
     </style>
@@ -311,20 +336,16 @@
     <div class="content">
         <div class="profile-section">
             <div class="profile-header">
-                <h2>마이페이지</h2>
-                <div class="actions">
-                    <button onclick="window.location.href='/chats'">채팅 목록</button>
-                    <button class="logout" onclick="logout()">로그아웃</button>
-                </div>
-            </div>
-            
-            <div class="profile-info">
                 <div class="profile-image">
                     <img src="images/profile.png" alt="User Profile">
                 </div>
                 <div class="profile-details">
-                    <p><strong>이름:</strong> {{ user.name }}</p>
-                    <p><strong>이메일:</strong> {{ user.email }}</p>
+                    <h2>{{ user.name }}</h2>
+                    <p>{{ user.email }}</p>
+                </div>
+                <div class="actions">
+                    <button onclick="window.location.href='/chats'">채팅 목록</button>
+                    <button class="logout" onclick="logout()">로그아웃</button>
                 </div>
             </div>
         </div>
@@ -340,7 +361,7 @@
                         <span class="category">#{{ item.category }}</span>
                         <span class="category">{{ item.local_category }}</span>
                     </div>
-                    <p class="price">{{ item.price_per_day }}원 / 일</p>
+                    <p class="price">{{ item.price_per_day }}<span class="unit">/일</span></p>
                 </div>
             </div>
             {% endfor %}
@@ -357,7 +378,7 @@
                         <span class="category">#{{ item.category }}</span>
                         <span class="category">{{ item.local_category }}</span>
                     </div>
-                    <p class="price">{{ item.price }}원</p>
+                    <p class="price">{{ item.price }}</p>
                 </div>
             </div>
             {% endfor %}

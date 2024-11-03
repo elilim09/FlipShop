@@ -1,14 +1,171 @@
-<!-- chat.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <title>채팅방</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: white;
+            padding: 0.8rem 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            height: 60px;
+        }
+
+        .logo {
+            height: 40px;
+            width: auto;
+        }
+
+        #messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            -webkit-overflow-scrolling: touch; /* iOS 스크롤 부드럽게 */
+            width: 100%; /* 화면 밖으로 나가는 현상 방지 */
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 0.8rem 1rem;
+            border-radius: 1rem;
+            position: relative;
+            word-break: break-word;
+            width: fit-content;
+        }
+
+        @media (min-width: 768px) {
+            .message {
+                max-width: 70%;
+            }
+        }
+
+        .message.sent {
+            background-color: #00FFB2;
+            color: #000;
+            align-self: flex-end;
+            border-bottom-right-radius: 0.3rem;
+        }
+
+        .message.received {
+            background-color: white;
+            color: #000;
+            align-self: flex-start;
+            border-bottom-left-radius: 0.3rem;
+        }
+
+        .message .time {
+            font-size: 0.75rem;
+            color: rgba(0, 0, 0, 0.5);
+            margin-top: 0.3rem;
+        }
+
+        #message-form {
+            background-color: white;
+            padding: 0.8rem;
+            display: flex;
+            gap: 0.5rem;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 1.5rem;
+            outline: none;
+            transition: border-color 0.2s;
+            font-size: 16px; /* iOS에서 자동 확대 방지 */
+            width: 100%; /* 메시지 입력창이 화면 밖으로 나가는 현상 방지 */
+        }
+
+        #message-input:focus {
+            border-color: #00FFB2;
+        }
+
+        button {
+            background-color: #00FFB2;
+            color: #000;
+            border: none;
+            padding: 0.8rem 1.2rem;
+            border-radius: 1.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            min-width: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent; /* 모바일 터치 하이라이트 제거 */
+        }
+
+        @media (hover: hover) {
+            button:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0, 255, 178, 0.3);
+            }
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* iOS 사파리 관련 추가 스타일 */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                height: -webkit-fill-available;
+            }
+        }
+
+        /* 모바일 키보드가 올라올 때 레이아웃 깨짐 방지 */
+        @media (max-height: 400px) {
+            .header {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+            }
+            
+            #messages {
+                margin-top: 60px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>채팅방</h1>
+    <div class="header">
+        <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="Flip Shop" class="logo">
+        <button id="exit-chat" style="margin-left: auto; background: transparent; border: none; color: #00FFB2; cursor: pointer; font-size: 16px; padding: 0.5rem;">채팅 나가기</button>
+    </div>
+
+
     <div id="messages">
         <!-- 메시지가 여기에 표시됩니다 -->
     </div>
+
     <form id="message-form">
         <input type="hidden" id="user_id" value="{{ user_id }}">
         <input type="text" id="message-input" placeholder="메시지를 입력하세요" required>
@@ -22,7 +179,14 @@
         const messageForm = document.getElementById('message-form');
         const messageInput = document.getElementById('message-input');
 
-        // 메시지 불러오기
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('ko-KR', { 
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+        }
+
         async function loadMessages() {
             const response = await fetch(`/chat/${chatId}/messages`);
             if (response.ok) {
@@ -30,21 +194,23 @@
                 messagesDiv.innerHTML = '';
                 messages.forEach(msg => {
                     const msgDiv = document.createElement('div');
+                    const isSent = msg.sender_id === parseInt(userId);
+                    msgDiv.className = `message ${isSent ? 'sent' : 'received'}`;
                     msgDiv.innerHTML = `
-                        <p><strong>${msg.sender_id === parseInt(userId) ? '나' : '상대방'}:</strong> ${msg.message}</p>
-                        <p>${msg.sent_at}</p>
+                        <div class="content">${msg.message}</div>
+                        <div class="time">${formatDate(msg.sent_at)}</div>
                     `;
                     messagesDiv.appendChild(msgDiv);
                 });
-            } else {
-                alert('메시지를 불러오지 못했습니다.');
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
         }
 
-        // 메시지 전송
         messageForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const message = messageInput.value;
+            const message = messageInput.value.trim();
+            if (!message) return;
+
             const formData = new FormData();
             formData.append('message', message);
 
@@ -56,16 +222,73 @@
             if (response.ok) {
                 messageInput.value = '';
                 loadMessages();
-            } else {
-                alert('메시지를 전송하지 못했습니다.');
             }
         });
 
-        // 일정 간격으로 메시지 업데이트
-        setInterval(loadMessages, 3000);
+        // 모바일 키보드 관련 스크롤 조정
+        messageInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 300);
+        });
 
-        // 페이지 로드 시 메시지 불러오기
+        setInterval(loadMessages, 3000);
         loadMessages();
+
+        // 거래 성사 관련 팝업
+        document.getElementById('exit-chat').addEventListener('click', () => {
+        Swal.fire({
+            title: '거래 평가',
+            text: '거래가 어떻게 진행되었나요?',
+            icon: 'question',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: '성공적으로 완료됨',
+            denyButtonText: '사기를 당함',
+            cancelButtonText: '취소'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                // 거래 성사 처리 로직
+                await sendEvaluation('success');
+            } else if (result.isDenied) {
+                // 사기 신고 처리 로직
+                await sendEvaluation('fraud');
+            } else {
+                // 취소됨
+                Swal.fire('평가가 취소되었습니다.', '', 'info');
+            }
+        });
+    });
+    
+    async function sendEvaluation(status) {
+        try {
+            const response = await fetch(`/chat/${chatId}/evaluate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: status })
+            });
+        
+            if (response.ok) {
+                const data = await response.json();
+                Swal.fire('평가가 완료되었습니다.', data.message, 'success');
+                // 상대방도 평가를 완료했는지 확인
+                if (data.both_evaluated) {
+                    // 채팅방 나가기 또는 다른 동작 수행
+                    window.location.href = '/chats';  // 채팅 목록 페이지로 이동
+                } else {
+                    Swal.fire('상대방의 평가를 기다리고 있습니다.', '', 'info');
+                }
+            } else {
+                const errorData = await response.json();
+                Swal.fire('오류 발생', errorData.detail, 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire('오류 발생', '서버 요청 중 오류가 발생했습니다.', 'error');
+        }
+    }
     </script>
 </body>
 </html>
