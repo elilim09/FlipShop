@@ -4,232 +4,380 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Page - FlipShop</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #00FFB2;
+            --primary-dark: #00cc8e;
             --secondary-color: #F5A623;
             --background-color: #F8F9FA;
-            --text-color: #333333;
-            --light-gray: #e9efed;
+            --text-color: #2D3436;
+            --light-gray: #f0f2f5;
+            --border-radius: 16px;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-md: 0 8px 16px rgba(0,0,0,0.06);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            font-family: 'Montserrat', Arial, sans-serif;
+            font-family: 'Montserrat', sans-serif;
             margin: 0;
             padding: 0;
             background-color: var(--background-color);
             color: var(--text-color);
+            line-height: 1.7;
         }
 
         .header {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
-            padding: 15px;
+            padding: 20px 40px;
             background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-sm);
             position: sticky;
             top: 0;
             z-index: 1000;
+            backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.98);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .header img {
-            height: 40px;
-            margin-right: 10px;
+            height: 44px;
+            transition: var(--transition);
+        }
+
+        .header img:hover {
+            transform: scale(1.05);
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 26px;
             margin: 0;
             color: #000000;
+            font-weight: 700;
+            letter-spacing: -0.5px;
         }
 
         .content {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 48px auto;
+            padding: 0 24px;
         }
 
-        .content h2 {
-            font-size: 22px;
+        .profile-section {
+            background: #ffffff;
+            border-radius: var(--border-radius);
+            padding: 40px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 48px;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .profile-header h2 {
+            font-size: 28px;
             font-weight: 700;
-            margin-bottom: 20px;
+            margin: 0;
+            letter-spacing: -0.5px;
         }
 
         .profile-info {
             display: flex;
             align-items: center;
-            margin-bottom: 20px;
+            gap: 40px;
         }
 
-        .profile-info img {
-            width: 80px;
-            height: 80px;
+        .profile-image {
+            position: relative;
+        }
+
+        .profile-image img {
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
-            margin-right: 20px;
+            object-fit: cover;
+            border: 4px solid var(--light-gray);
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
         }
 
-        .profile-info div {
-            font-size: 18px;
+        .profile-image img:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-md);
         }
 
-        .profile-info div p {
-            margin: 5px 0;
+        .profile-details {
+            flex: 1;
+        }
+
+        .profile-details p {
+            margin: 12px 0;
+            font-size: 16px;
+            color: #4a5568;
+        }
+
+        .profile-details strong {
+            color: #2d3748;
+            font-weight: 600;
         }
 
         .actions {
             display: flex;
-            justify-content: space-between;
-            margin-top: 30px;
+            gap: 16px;
         }
 
         .actions button {
             background-color: var(--primary-color);
             border: none;
-            border-radius: 25px;
-            color: #ffffff;
-            padding: 10px 20px;
-            font-size: 16px;
+            border-radius: 30px;
+            color: #000;
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.3s ease;
+            transition: var(--transition);
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 0.3px;
         }
 
         .actions button:hover {
-            background-color: var(--secondary-color);
+            background-color: var(--primary-dark);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .rented-items, .purchased-items {
-            margin-top: 40px;
+        .actions button.logout {
+            background-color: var(--light-gray);
         }
 
-        .rented-items h3, .purchased-items h3 {
-            font-size: 20px;
+        .actions button.logout:hover {
+            background-color: #e2e8f0;
+        }
+
+        .section-title {
+            font-size: 24px;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin: 48px 0 24px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .section-title::before {
+            content: "";
+            width: 5px;
+            height: 28px;
+            background-color: var(--primary-color);
+            display: inline-block;
+            border-radius: 3px;
         }
 
         .item-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 28px;
+            margin-top: 24px;
         }
 
         .item {
             background-color: #ffffff;
-            border-radius: 10px;
+            border-radius: var(--border-radius);
             overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            border: 1px solid rgba(0,0,0,0.04);
         }
 
         .item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
         }
 
         .item img {
             width: 100%;
-            height: 200px;
+            height: 220px;
             object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .item:hover img {
+            transform: scale(1.05);
         }
 
         .item .details {
-            padding: 15px;
+            padding: 24px;
         }
 
         .item .details h4 {
-            font-size: 18px;
-            margin: 0 0 10px 0;
+            font-size: 20px;
+            margin: 0 0 16px 0;
+            font-weight: 700;
+            letter-spacing: -0.3px;
         }
 
-        .item .details p {
-            color: #777;
-            margin: 5px 0;
-            font-size: 14px;
+        .item .details .categories {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .item .details .category {
+            background-color: var(--light-gray);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #4a5568;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .item .details .category:hover {
+            background-color: #e2e8f0;
+            transform: translateY(-1px);
         }
 
         .item .details .price {
             color: var(--secondary-color);
-            font-weight: bold;
-            font-size: 16px;
+            font-weight: 700;
+            font-size: 20px;
+            margin-top: 16px;
+            letter-spacing: -0.3px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px 20px;
+            }
+
+            .content {
+                padding: 0 16px;
+                margin: 32px auto;
+            }
+
+            .profile-section {
+                padding: 24px;
+            }
+
+            .profile-info {
+                flex-direction: column;
+                text-align: center;
+                gap: 24px;
+            }
+
+            .profile-image img {
+                width: 120px;
+                height: 120px;
+            }
+
+            .actions {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .item-list {
+                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+                gap: 20px;
+            }
+
+            .section-title {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
-        <h1>FlipShop</h1>
+        <div class="header-left">
+            <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
+            <h1>FlipShop</h1>
+        </div>
     </div>
 
     <div class="content">
-        <h2>My Page</h2>
-        <div class="profile-info">
-            <img src="images/profile.png" alt="User Profile">
-            <div>
-                <p><strong>Username:</strong> {{ user.username }}</p>
-                <p><strong>Email:</strong> {{ user.email }}</p>
-            </div>
-        </div>
-
-        <div class="actions">
-            <button onclick="window.location.href='/edit-profile'">Edit Profile</button>
-            <button onclick="logout()">Logout</button>
-        </div>
-        
-        <script>
-            async function logout() {
-                try {
-                    // 로그아웃 엔드포인트에 요청 보내기
-                    const response = await fetch('/logout', {
-                        method: 'GET',
-                        credentials: 'include'  // 쿠키를 함께 보내도록 설정
-                    });
-                    if (response.redirected) {
-                        window.location.href = response.url;  // 리다이렉트된 URL로 이동
-                    }
-                } catch (error) {
-                    console.error("Logout failed:", error);
-                }
-            }
-        </script>
-        
-
-        <div class="rented-items">
-            <h3>Rented Items</h3>
-            <div class="item-list">
-                {% for item in rented_items %}
-                <div class="item">
-                    <img src="{{ item.image_url }}" alt="{{ item.name }}">
-                    <div class="details">
-                        <h4>{{ item.name }}</h4>
-                        <p>#{{ item.category }} | {{ item.local_category }}</p>
-                        <p class="price">{{ item.price_per_day }}원 / 일</p>
-                    </div>
+        <div class="profile-section">
+            <div class="profile-header">
+                <h2>마이페이지</h2>
+                <div class="actions">
+                    <button onclick="window.location.href='/chats'">채팅 목록</button>
+                    <button class="logout" onclick="logout()">로그아웃</button>
                 </div>
-                {% endfor %}
+            </div>
+            
+            <div class="profile-info">
+                <div class="profile-image">
+                    <img src="images/profile.png" alt="User Profile">
+                </div>
+                <div class="profile-details">
+                    <p><strong>이름:</strong> {{ user.name }}</p>
+                    <p><strong>이메일:</strong> {{ user.email }}</p>
+                </div>
             </div>
         </div>
 
-        <div class="purchased-items">
-            <h3>Purchased Items</h3>
-            <div class="item-list">
-                {% for item in purchased_items %}
-                <div class="item">
-                    <img src="{{ item.image_url }}" alt="{{ item.name }}">
-                    <div class="details">
-                        <h4>{{ item.name }}</h4>
-                        <p>#{{ item.category }} | {{ item.local_category }}</p>
-                        <p class="price">{{ item.price }}원</p>
+        <h3 class="section-title">내가 판매 중인 상품</h3>
+        <div class="item-list">
+            {% for item in rented_items %}
+            <div class="item">
+                <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                <div class="details">
+                    <h4>{{ item.name }}</h4>
+                    <div class="categories">
+                        <span class="category">#{{ item.category }}</span>
+                        <span class="category">{{ item.local_category }}</span>
                     </div>
+                    <p class="price">{{ item.price_per_day }}원 / 일</p>
                 </div>
-                {% endfor %}
             </div>
+            {% endfor %}
+        </div>
+
+        <h3 class="section-title">고민 중인 상품</h3>
+        <div class="item-list">
+            {% for item in purchased_items %}
+            <div class="item">
+                <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                <div class="details">
+                    <h4>{{ item.name }}</h4>
+                    <div class="categories">
+                        <span class="category">#{{ item.category }}</span>
+                        <span class="category">{{ item.local_category }}</span>
+                    </div>
+                    <p class="price">{{ item.price }}원</p>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
+
+    <script>
+        async function logout() {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+            } catch (error) {
+                console.error("Logout failed:", error);
+            }
+        }
+    </script>
 </body>
 </html>

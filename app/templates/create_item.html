@@ -94,7 +94,7 @@
     </div>
     <div class="container">
         <h2>아이템 생성</h2>
-        <form id="create-item-form" enctype="multipart/form-data" action="/item/" method="POST">
+        <form id="create-item-form" enctype="multipart/form-data" action="/create_item" method="POST">
             <label for="name">아이템 이름</label>
             <input type="text" id="name" name="name" required>
 
@@ -115,9 +115,6 @@
             <label for="price">가격(원/일)</label>
             <input type="number" id="price" name="price_per_day" required>
 
-            <label for="owner_id">소유자 ID</label>
-            <input type="number" id="owner_id" name="owner_id" required>
-
             <label for="image">아이템 이미지</label>
             <input type="file" id="image" name="file" accept="image/*" required>
             
@@ -128,57 +125,51 @@
 
     <script>
         document.getElementById('create-item-form').addEventListener('submit', async function(event) {
-    event.preventDefault();
+            event.preventDefault();
 
-    const formData = new FormData(this);
+            const formData = new FormData(this);
 
-    // Debugging FormData contents
-    for (let [key, value] of formData.entries()) {
-    if (key === 'image') {
-        console.log(`${key}:`, value);  // 이미지 파일을 확인
-    } else {
-        console.log(`${key}: ${value}`);
-    }
-}
+            // 디버깅용 FormData 내용 출력
+            for (let [key, value] of formData.entries()) {
+                if (key === 'file') {
+                    console.log(`${key}:`, value);  // 이미지 파일 확인
+                } else {
+                    console.log(`${key}: ${value}`);
+                }
+            }
 
+            try {
+                const response = await fetch('/create_item', {
+                    method: 'POST',
+                    body: formData
+                });
 
-    try {
-        const response = await fetch('/create_item/', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (response.ok) {
-            document.getElementById('message').innerText = '아이템이 성공적으로 생성되었습니다!';
-            document.getElementById('message').style.display = 'block';
-            this.reset();
-        } else {
-            const errorData = await response.json();
-            console.log(errorData);  // Log the error response
-            document.getElementById('message').innerText = '아이템 생성 실패: ' + errorData.detail;
-            document.getElementById('message').style.backgroundColor = '#f8d7da';
-            document.getElementById('message').style.color = '#721c24';
-            document.getElementById('message').style.display = 'block';
-        }
-    } catch (error) {
-        document.getElementById('message').innerText = '서버와 통신 중 오류가 발생했습니다.';
-        document.getElementById('message').style.backgroundColor = '#f8d7da';
-        document.getElementById('message').style.color = '#721c24';
-        document.getElementById('message').style.display = 'block';
-    }
-});
-
-    </script>
-
-    <!-- 로그인 여부 확인 -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const isAuthenticated = JSON.parse(localStorage.getItem('user_is_authenticated'));
-            if (!isAuthenticated) {
-                window.location.href = "/login"; // 로그인 페이지로 리디렉션
+                if (response.ok) {
+                    document.getElementById('message').innerText = '아이템이 성공적으로 생성되었습니다!';
+                    document.getElementById('message').style.display = 'block';
+                    this.reset();
+                } else {
+                    const errorData = await response.json();
+                    console.log(errorData);  // 에러 응답 로그
+                    document.getElementById('message').innerText = '아이템 생성 실패: ' + errorData.detail;
+                    document.getElementById('message').style.backgroundColor = '#f8d7da';
+                    document.getElementById('message').style.color = '#721c24';
+                    document.getElementById('message').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('message').innerText = '서버와 통신 중 오류가 발생했습니다.';
+                document.getElementById('message').style.backgroundColor = '#f8d7da';
+                document.getElementById('message').style.color = '#721c24';
+                document.getElementById('message').style.display = 'block';
             }
         });
+
+        // 로그인 여부 확인
+        document.addEventListener("DOMContentLoaded", function() {
+            // 백엔드에서 이미 인증을 처리하므로, 프론트엔드에서 추가적으로 확인할 필요는 없습니다.
+            // 하지만 사용자가 로그아웃 된 상태에서 이 페이지에 접근하지 못하도록 백엔드에서 이미 리디렉션을 처리했습니다.
+            // 따라서 이 스크립트는 필요 없을 수 있습니다.
+        });
     </script>
-    
 </body>
 </html>

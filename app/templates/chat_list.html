@@ -1,0 +1,38 @@
+<!-- chat_list.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>채팅 목록</title>
+</head>
+<body>
+    <h1>채팅 목록</h1>
+    <ul id="chat-list">
+        <!-- 채팅 목록이 여기에 표시됩니다 -->
+    </ul>
+
+    <script>
+        // 채팅 목록 불러오기
+        async function loadChats() {
+            const response = await fetch('/chats');
+            if (response.ok) {
+                const chats = await response.json();
+                const chatList = document.getElementById('chat-list');
+                chatList.innerHTML = '';
+                chats.forEach(chat => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <a href="/chat/${chat.chat_id}">채팅방: ${chat.chatname}</a>
+                        <p>최근 메시지: ${chat.latest_message}</p>
+                        <p>보낸 시간: ${chat.sent_at}</p>
+                    `;
+                    chatList.appendChild(li);
+                });
+            } else {
+                alert('채팅 목록을 불러오지 못했습니다.');
+            }
+        }
+
+        loadChats();
+    </script>
+</body>
+</html>

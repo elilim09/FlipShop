@@ -107,6 +107,11 @@
             color: #495057;
             border: none;
         }
+        /* 기존 스타일 유지 */
+        .bookmark-button.bookmarked {
+            background-color: #4ade80;
+            color: white;
+        }
         .contact-button {
             background-color: #4ade80;
             color: white;
@@ -141,19 +146,31 @@
         </div>
     </div>
     
-    <div class="action-buttons">
-        <button class="bookmark-button">
+    <div class="action-buttons" data-user-id="{{ user_id }}">
+        <button class="bookmark-button{% if is_bookmarked %} bookmarked{% endif %}" onclick="toggleBookmark({{ item.id }});">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
             </svg>
             나중에 보기
         </button>
-        <button class="contact-button" onclick="createChat({ item_id });">연락해보기</button>
+
+        <form action="/chat" method="post">
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+            <button class="contact-button" type="submit";>연락해보기</button>
+        </form>
+    </div>
 
 <script>
     async function createChat(item_id) {
         try {
-            const buyerId = 1;  // 여기에 실제 로그인된 사용자의 ID를 동적으로 설정해야 합니다.
+            const actionButtons = document.querySelector('.action-buttons');
+            const user_id = actionButtons.getAttribute('data-user-id');
+            if (!user_id) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return;
+            }
+
             const response = await fetch("/chat", {
                 method: "POST",
                 headers: {
@@ -168,9 +185,47 @@
             window.location.href = `/chat/${data.chat_id}`;
         } catch (error) {
             console.error(error);
+            alert('채팅방 생성에 실패했습니다.');
+        }
+    }
+
+    async function toggleBookmark(item_id) {
+        try {
+            const actionButtons = document.querySelector('.action-buttons');
+            const user_id = actionButtons.getAttribute('data-user-id');
+            if (!user_id) {
+                alert('로그인이 필요합니다.');
+                window.location.href = '/login';
+                return;
+            }
+
+            const response = await fetch('/bookmark_item', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 'item_id': item_id }),
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/login';
+                    return;
+                }
+                throw new Error('Failed to toggle bookmark');
+            }
+            const data = await response.json();
+            const bookmarkButton = document.querySelector('.bookmark-button');
+            if (data.is_bookmarked) {
+                bookmarkButton.classList.add('bookmarked');
+            } else {
+                bookmarkButton.classList.remove('bookmarked');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('북마크 처리 중 오류가 발생했습니다.');
         }
     }
 </script>
-    </div>
 </body>
 </html>

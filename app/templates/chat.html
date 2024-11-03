@@ -1,209 +1,71 @@
+<!-- chat.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Room</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-        }
-
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            width: 90%;
-            max-width: 600px;
-            background-color: #fff;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-            height: 80%;
-            margin-top: 20px;
-            overflow: hidden;
-        }
-
-        .chat-header {
-            padding: 15px;
-            background-color: #00FFB2;
-            color: #fff;
-            font-size: 1.5rem;
-            text-align: center;
-        }
-
-        .chat-box {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background-color: #f9f9f9;
-        }
-
-        .chat-box::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .chat-box::-webkit-scrollbar-thumb {
-            background-color: #00FFB2;
-            border-radius: 10px;
-        }
-
-        .message {
-            margin-bottom: 15px;
-        }
-
-        .message.user1 {
-            text-align: left;
-        }
-
-        .message.user2 {
-            text-align: right;
-        }
-
-        .message-content {
-            display: inline-block;
-            padding: 10px;
-            border-radius: 10px;
-            max-width: 70%;
-            background-color: #e0e0e0;
-        }
-
-        .message.user2 .message-content {
-            background-color: #00FFB2;
-            color: #fff;
-        }
-
-        .chat-input-container {
-            display: flex;
-            padding: 15px;
-            background-color: #fff;
-            border-top: 1px solid #ddd;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-        }
-
-        .send-button {
-            background-color: #00FFB2;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            margin-left: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .send-button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-    </style>
+    <title>채팅방</title>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">Chat Room</div>
-        <div class="chat-box" id="chat-box"></div>
-        <div class="chat-input-container">
-            <input type="text" id="chat-input" class="chat-input" placeholder="Type a message...">
-            <button id="send-button" class="send-button">Send</button>
-        </div>
+    <h1>채팅방</h1>
+    <div id="messages">
+        <!-- 메시지가 여기에 표시됩니다 -->
     </div>
+    <form id="message-form">
+        <input type="hidden" id="user_id" value="{{ user_id }}">
+        <input type="text" id="message-input" placeholder="메시지를 입력하세요" required>
+        <button type="submit">전송</button>
+    </form>
 
     <script>
-        const chatBox = document.getElementById("chat-box");
-        const chatInput = document.getElementById("chat-input");
-        const sendButton = document.getElementById("send-button");
-        const chatId = 1; // Replace with actual chat ID
-        const userId = 1; // Replace with the logged-in user ID
-        const isSeller = true; // Set to true if the user is the seller (user1), otherwise false (user2)
-    
-        // Load messages initially
+        const chatId = {{ chat_id }};
+        const userId = document.getElementById('user_id').value;
+        const messagesDiv = document.getElementById('messages');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+
+        // 메시지 불러오기
         async function loadMessages() {
-            try {
-                const response = await fetch(`/chat/${chatId}/messages`);
-                if (!response.ok) {
-                    throw new Error("Failed to fetch messages");
-                }
+            const response = await fetch(`/chat/${chatId}/messages`);
+            if (response.ok) {
                 const messages = await response.json();
-                chatBox.innerHTML = "";
-                messages.forEach(({ user1_id, user2_id, message, sent_at }) => {
-                    const userIdForMessage = user1_id ? user1_id : user2_id;
-                    addMessageToChat(userIdForMessage, message);
+                messagesDiv.innerHTML = '';
+                messages.forEach(msg => {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.innerHTML = `
+                        <p><strong>${msg.sender_id === parseInt(userId) ? '나' : '상대방'}:</strong> ${msg.message}</p>
+                        <p>${msg.sent_at}</p>
+                    `;
+                    messagesDiv.appendChild(msgDiv);
                 });
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (error) {
-                console.error(error);
+            } else {
+                alert('메시지를 불러오지 못했습니다.');
             }
         }
-    
-        // Add a message to the chat box
-        function addMessageToChat(userIdForMessage, message) {
-            const messageElement = document.createElement("div");
-            messageElement.classList.add("message");
-            messageElement.classList.add(userIdForMessage === userId ? (isSeller ? "user1" : "user2") : (isSeller ? "user2" : "user1"));
-            const messageContent = document.createElement("div");
-            messageContent.classList.add("message-content");
-            messageContent.innerText = message;
-            messageElement.appendChild(messageContent);
-            chatBox.appendChild(messageElement);
-        }
-    
-        // Send a new message
-        async function sendMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
-            sendButton.disabled = true;
-    
-            try {
-                const response = await fetch(`/chat/${chatId}/messages`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        user_id: userId,
-                        message: message
-                    })
-                });
-                if (!response.ok) {
-                    throw new Error("Failed to send message");
-                }
-                addMessageToChat(userId, message);
-                chatInput.value = "";
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (error) {
-                console.error(error);
-            } finally {
-                sendButton.disabled = false;
-            }
-        }
-    
-        // Add event listeners
-        sendButton.addEventListener("click", sendMessage);
-        chatInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                sendMessage();
+
+        // 메시지 전송
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = messageInput.value;
+            const formData = new FormData();
+            formData.append('message', message);
+
+            const response = await fetch(`/chat/${chatId}/messages`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                messageInput.value = '';
+                loadMessages();
+            } else {
+                alert('메시지를 전송하지 못했습니다.');
             }
         });
-    
-        // Periodically load new messages every 2 seconds
-        setInterval(loadMessages, 2000);
-    
-        // Load messages initially
+
+        // 일정 간격으로 메시지 업데이트
+        setInterval(loadMessages, 3000);
+
+        // 페이지 로드 시 메시지 불러오기
         loadMessages();
-    </script>    
+    </script>
 </body>
 </html>
