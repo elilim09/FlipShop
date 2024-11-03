@@ -1,9 +1,11 @@
 fastapi
-uvicorn
 sqlalchemy
-databases
-alembic
-passlib[bcrypt]
-python-jose
-aiosqlite
+firebase-admin
+jose
+dropbox
+google-cloud-vision
+googlemaps
 pydantic
+jinja2
+httpx
+uvicorn
