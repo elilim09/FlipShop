@@ -9,3 +9,4 @@ pydantic
 jinja2
 httpx
 uvicorn
+passib
