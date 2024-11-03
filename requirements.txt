@@ -1,7 +1,7 @@
 fastapi
 sqlalchemy
 firebase-admin
-jose
+python-jose
 dropbox
 google-cloud-vision
 googlemaps
