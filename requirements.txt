@@ -10,3 +10,4 @@ jinja2
 httpx
 uvicorn
 passlib
+pydantic
