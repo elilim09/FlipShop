@@ -11,4 +11,4 @@ httpx
 uvicorn
 passlib
 aiomysql
-dotenv
+python-dotenv
