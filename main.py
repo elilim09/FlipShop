@@ -21,6 +21,7 @@ import json
 import os
 import base64
 
+from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, auth
 from google.cloud import vision
@@ -39,11 +40,8 @@ SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.a
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
-import os
-import json
-import firebase_admin
-from firebase_admin import credentials
-
+#.둪vkdlffhem
+load_dotenv()
 # 환경 변수에서 Firebase 시크릿 읽기
 encoded_firebase_key = os.getenv('FIREBASE_KEY_BASE64')
 
@@ -73,7 +71,7 @@ else:
     cred = credentials.Certificate('app/config/flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json')
     firebase_admin.initialize_app(cred)
     print("로컬 Firebase JSON 파일을 사용하여 Firebase 초기화 완료")
-    
+
 
 class ItemSchema(BaseModel):
     name: str
