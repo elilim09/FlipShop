@@ -19,6 +19,7 @@ from jose import jwt
 from jose.exceptions import JWTError, ExpiredSignatureError
 import json
 import os
+import base64
 
 import firebase_admin
 from firebase_admin import credentials, auth
@@ -32,7 +33,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
 SECRET_KEY = 'dkgkqrurgkrhtlvek'  # 실제 키로 대체하세요
 ALGORITHM = "HS256"
 
-DROP_API_KEY = "sl.B_8hJI2YyIbjrRocA9jZSXusEbKuGYCuQOeQ5ioSLlk6Mis_MpedE6O5lmlfMnB4hENFqXilBMfWQM7bVX2Ih1CJqVHaoh7YkghOj7VZjvMAnGMN89YQQLNFK8hKskVIzcxqiSb7f7gQaNJDNbq2CFA"  # 실제 키로 대체하세요
+DROP_API_KEY = "sl.B_8HsSnvUElRssFbq3Yf1OXYYlqF9V7ivZGtremfcb34HmvTR5SQ2XC4EfF-_V_IePXYpIc28DYr4CoDJq7VaGTVptqlWSYjicwWSIqiWMWsQhog7qxHMbEM9LGMJ5hhQ8UVQfe7blyCW7R1Ni1PL94"  # 실제 키로 대체하세요
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"  # 실제 URL로 대체하세요
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
@@ -44,19 +45,35 @@ import firebase_admin
 from firebase_admin import credentials
 
 # 환경 변수에서 Firebase 시크릿 읽기
-firebase_json = os.getenv('FIREBASE_API')
+encoded_firebase_key = os.getenv('FIREBASE_KEY_BASE64')
 
-if firebase_json:
-    # 환경 변수에서 가져온 경우
-    with open('flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json', 'w') as f:
-        f.write(firebase_json)
-    cred = credentials.Certificate('flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json')
+if encoded_firebase_key:
+    try:
+        # Base64 디코딩
+        decoded_firebase_key = base64.b64decode(encoded_firebase_key).decode('utf-8')
+        
+        # JSON 문자열을 파이썬 딕셔너리로 변환
+        firebase_config = json.loads(decoded_firebase_key)
+        
+        # Firebase 자격 증명 객체 생성
+        cred = credentials.Certificate(firebase_config)
+        
+        # Firebase 초기화 (이미 초기화되었는지 확인)
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app(cred)
+        else:
+            print("Firebase는 이미 초기화되었습니다.")
+        
+        print("Firebase 초기화 성공")
+    except (base64.binascii.Error, json.JSONDecodeError) as e:
+        print(f"Firebase 환경 변수 디코딩 또는 JSON 파싱 오류: {str(e)}")
+        raise
 else:
     # 로컬 JSON 파일 사용
-    cred = credentials.Certificate('app/config/flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json')  # 실제 파일 경로로 변경하세요
-
-# Firebase 초기화
-firebase_admin.initialize_app(cred)
+    cred = credentials.Certificate('app/config/flipshop-438500-firebase-adminsdk-c2uus-7de82c527f.json')
+    firebase_admin.initialize_app(cred)
+    print("로컬 Firebase JSON 파일을 사용하여 Firebase 초기화 완료")
+    
 
 class ItemSchema(BaseModel):
     name: str
@@ -337,12 +354,33 @@ async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
             print(f"No user found for email: {email}")
             return RedirectResponse(url="/login", status_code=307)
 
+        # 내가 판매 중인 상품 조회 (owner_id가 현재 사용자 ID인 아이템들)
+        result = await db.execute(
+            select(ItemModel).where(ItemModel.owner_id == user.id)
+        )
+        rented_items = result.scalars().all()
+
+        # 고민 중인 상품 조회 (사용자의 북마크된 아이템들)
+        purchased_items = []
+        if user.bookmarks:
+            try:
+                bookmarked_ids = [int(id) for id in json.loads(user.bookmarks)]
+                if bookmarked_ids:
+                    result = await db.execute(
+                        select(ItemModel).where(ItemModel.id.in_(bookmarked_ids))
+                    )
+                    purchased_items = result.scalars().all()
+            except json.JSONDecodeError:
+                pass
+
         return templates.TemplateResponse(
             "mypage.html", 
             {
                 "request": request, 
                 "user": user, 
-                "user_is_authenticated": True
+                "user_is_authenticated": True,
+                "rented_items": rented_items,
+                "purchased_items": purchased_items
             }
         )
 
@@ -599,7 +637,7 @@ async def search_category(
 # 필요한 임포트 추가
 from sqlalchemy import and_, or_
 
-# 수정된 create_chat 함수
+#채팅방 생성 코드
 @app.post("/chat")
 async def create_chat(
     item_id: int = Form(...),

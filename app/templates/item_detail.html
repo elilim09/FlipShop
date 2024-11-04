@@ -306,7 +306,9 @@
         </div>
         
         <p class="item-description">{{ item.description }}</p>
+        <p>{{ item.price_per_day }}원 / 일</p>
         
+        <br><br>
         <div class="seller-info">
             <img src="{{ item.owner_avatar_url|default('https://via.placeholder.com/48') }}" 
                  alt="판매자 프로필" 

@@ -45,71 +45,25 @@
         <div class="bg-white rounded-lg shadow-lg p-6">
             <h2 class="text-xl font-semibold mb-6 text-gray-800 border-b pb-3">채팅 목록</h2>
             <ul id="chat-list" class="space-y-4">
-                <!-- 채팅 목록이 여기에 표시됩니다 -->
+                {% if chats %}
+                    {% for chat in chats %}
+                        <li class="chat-item bg-white border rounded-lg p-4 hover:shadow-md cursor-pointer">
+                            <a href="/chat/{{ chat.chat_id }}" class="block">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-semibold text-lg text-gray-800">{{ chat.chatname }}</h3>
+                                    <span class="text-sm text-gray-500">{{ chat.sent_at }}</span>
+                                </div>
+                                <p class="mt-2 text-gray-600 line-clamp-1">{{ chat.latest_message }}</p>
+                            </a>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="text-center text-gray-500 py-8">
+                        아직 채팅방이 없습니다.
+                    </li>
+                {% endif %}
             </ul>
         </div>
     </main>
-
-    <script>
-        async function loadChats() {
-            try {
-                const response = await fetch('/chats');
-                if (response.ok) {
-                    const chats = await response.json();
-                    const chatList = document.getElementById('chat-list');
-                    chatList.innerHTML = '';
-                    
-                    if (chats.length === 0) {
-                        chatList.innerHTML = `
-                            <li class="text-center text-gray-500 py-8">
-                                아직 채팅방이 없습니다.
-                            </li>
-                        `;
-                        return;
-                    }
-
-                    chats.forEach(chat => {
-                        const li = document.createElement('li');
-                        li.className = 'chat-item bg-white border rounded-lg p-4 hover:shadow-md cursor-pointer';
-                        
-                        // 날짜 포맷팅
-                        const date = new Date(chat.sent_at);
-                        const formattedDate = new Intl.DateTimeFormat('ko-KR', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        }).format(date);
-
-                        li.innerHTML = `
-                            <a href="/chat/${chat.chat_id}" class="block">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="font-semibold text-lg text-gray-800">${chat.chatname}</h3>
-                                    <span class="text-sm text-gray-500">${formattedDate}</span>
-                                </div>
-                                <p class="mt-2 text-gray-600 line-clamp-1">${chat.latest_message}</p>
-                            </a>
-                        `;
-                        chatList.appendChild(li);
-                    });
-                } else {
-                    throw new Error('Failed to load chats');
-                }
-            } catch (error) {
-                const chatList = document.getElementById('chat-list');
-                chatList.innerHTML = `
-                    <li class="text-center text-red-500 py-8">
-                        채팅 목록을 불러오는 중 오류가 발생했습니다.
-                        <button onclick="loadChats()" class="mt-2 px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">
-                            다시 시도
-                        </button>
-                    </li>
-                `;
-            }
-        }
-
-        loadChats();
-    </script>
 </body>
 </html>
