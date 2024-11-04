@@ -34,7 +34,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
 SECRET_KEY = 'dkgkqrurgkrhtlvek'  # 실제 키로 대체하세요
 ALGORITHM = "HS256"
 
-DROP_API_KEY = "sl.B_8HsSnvUElRssFbq3Yf1OXYYlqF9V7ivZGtremfcb34HmvTR5SQ2XC4EfF-_V_IePXYpIc28DYr4CoDJq7VaGTVptqlWSYjicwWSIqiWMWsQhog7qxHMbEM9LGMJ5hhQ8UVQfe7blyCW7R1Ni1PL94"  # 실제 키로 대체하세요
+DROP_API_KEY = "sl.CAGt-vySF-ZirFFECDavbWQwE6AC2vZBAW32-Hprfey35UKsZVM3_lDE1nOXZ2ulb4wrRL1rJhkPSL-uUNgHbg9wzTS2jqCz0CwJZgNYLTFSr4-DGdkeUTB3hszs_1NT6QyJgymkCshI3NGuE7ql300"  # 실제 키로 대체하세요
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"  # 실제 URL로 대체하세요
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
