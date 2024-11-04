@@ -13,3 +13,4 @@ passlib
 aiomysql
 python-dotenv
 pydantic[email]
+python-multipart
