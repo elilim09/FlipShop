@@ -12,3 +12,4 @@ uvicorn
 passlib
 aiomysql
 python-dotenv
+pydantic[email]
