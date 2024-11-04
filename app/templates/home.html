@@ -423,30 +423,9 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // 로그인 상태 확인 후 UI 업데이트
-            const isAuthenticated = JSON.parse(localStorage.getItem('user_is_authenticated'));
-            if (isAuthenticated) {
-                document.querySelector('.profile').style.display = 'block';
-                document.querySelector('.login-button').style.display = 'none';
-            } else {
-                document.querySelector('.profile').style.display = 'none';
-                document.querySelector('.login-button').style.display = 'block';
-            }
-    
-            // 페이지 접근 시 로그인 상태 확인
-            if (!isAuthenticated && window.location.pathname !== '/login' && window.location.pathname !== '/signup') {
-                window.location.href = "/login";
-            }
-        });
-    
-        // 로그인 후 인증 상태 업데이트
-        document.addEventListener("login", function() {
-            localStorage.setItem('user_is_authenticated', JSON.stringify(true));
-        });
-    
-        // 로그아웃 후 인증 상태 초기화
-        document.addEventListener("logout", function() {
-            localStorage.setItem('user_is_authenticated', JSON.stringify(false));
+            // 로그인 상태 확인과 관련된 코드를 제거합니다.
+            document.querySelector('.profile').style.display = 'block';
+            document.querySelector('.login-button').style.display = 'none';
         });
     
         // 로그아웃 버튼 클릭 시 처리
@@ -454,7 +433,7 @@
             localStorage.setItem('user_is_authenticated', JSON.stringify(false));
             window.location.href = "/logout";
         }
-
+    
         // PC용 검색 모달 관련 함수
         function openSearchModal() {
             const modal = document.getElementById("searchModal");
@@ -478,6 +457,6 @@
                 closeSearchModal();
             }
         }
-    </script>
+    </script>    
 </body>
 </html>
