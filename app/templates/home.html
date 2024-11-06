@@ -138,6 +138,13 @@
         .product .details {
             padding: 15px;
         }
+
+        .product .details .price::after {
+            content: ' 원 /day';
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+        }
         
         .product .details h2 {
             font-size: 18px;
@@ -397,7 +404,7 @@
                 <div class="details">
                     <h2>{{ item.name }}</h2>
                     <p>#{{ item.category }} | {{ item.local_category }}</p>
-                    <p class="price">{{ item.price_per_day }}원 /day</p>
+                    <p class="price">{{ item.price_per_day }}</p>
                 </div>
             </a>
         </div>

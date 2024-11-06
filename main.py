@@ -321,6 +321,7 @@ async def postsignup(
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"서버 오류: {str(e)}")
 
+
 @app.get("/mypage")
 async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
     # 쿠키에서 토큰 가져오기
@@ -352,20 +353,24 @@ async def mypage(request: Request, db: AsyncSession = Depends(get_db)):
             print(f"No user found for email: {email}")
             return RedirectResponse(url="/login", status_code=307)
 
-        # 내가 판매 중인 상품 조회 (owner_id가 현재 사용자 ID인 아이템들)
+        # 내가 판매 중인 상품 조회 (owner_id가 현재 사용자 ID인 아이템들) - 최신순 정렬
         result = await db.execute(
-            select(ItemModel).where(ItemModel.owner_id == user.id)
+            select(ItemModel)
+            .where(ItemModel.owner_id == user.id)
+            .order_by(desc(ItemModel.item_date))
         )
         rented_items = result.scalars().all()
 
-        # 고민 중인 상품 조회 (사용자의 북마크된 아이템들)
+        # 고민 중인 상품 조회 (사용자의 북마크된 아이템들) - 최신순 정렬
         purchased_items = []
         if user.bookmarks:
             try:
                 bookmarked_ids = [int(id) for id in json.loads(user.bookmarks)]
                 if bookmarked_ids:
                     result = await db.execute(
-                        select(ItemModel).where(ItemModel.id.in_(bookmarked_ids))
+                        select(ItemModel)
+                        .where(ItemModel.id.in_(bookmarked_ids))
+                        .order_by(desc(ItemModel.item_date))
                     )
                     purchased_items = result.scalars().all()
             except json.JSONDecodeError:
@@ -603,12 +608,14 @@ async def search(
     result = await db.execute(
         select(ItemModel)
         .where(or_(ItemModel.name.like(f"%{target}%"), ItemModel.description.like(f"%{target}%")))
-        .order_by(ItemModel.item_date)
+        .order_by(ItemModel.item_date.desc())  # 최신순 정렬을 위해 desc() 추가
         .limit(10)
     )
     items_list = result.scalars().all()
+    
+    # 검색 결과가 없을 때 no_result.html로 이동
     if not items_list:
-        raise HTTPException(status_code=404, detail="검색 결과가 없습니다.")
+        return templates.TemplateResponse("no_result.html", {"request": request, "target": target})
 
     return templates.TemplateResponse("home.html", {"request": request, "items": items_list})
 
@@ -621,12 +628,14 @@ async def search_category(
     result = await db.execute(
         select(ItemModel)
         .where(or_(ItemModel.category.like(f"%{target}%"), ItemModel.description.like(f"%{target}%")))
-        .order_by(ItemModel.item_date)
+        .order_by(ItemModel.item_date.desc())  # 최신순 정렬을 위해 desc() 추가
         .limit(10)
     )
     items_list = result.scalars().all()
+    
+    # 검색 결과가 없을 때 no_result.html로 이동
     if not items_list:
-        raise HTTPException(status_code=404, detail="검색 결과가 없습니다.")
+        return templates.TemplateResponse("no_result.html", {"request": request, "target": target})
 
     return templates.TemplateResponse("home.html", {"request": request, "items": items_list})
 

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>검색 결과 없음 - FlipShop</title>
+    <link rel="icon" href="https://i.ibb.co/fFMYq7k/Flip-Shop.png">
+    <style>
+        /* 기본 스타일 */
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+            color: #333333;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 600px;
+            padding: 20px;
+            text-align: center;
+            color: #333;
+        }
+        
+        .logo {
+            max-width: 60%;
+            height: auto;
+            margin: 0 auto 20px;
+        }
+
+        .message {
+            font-size: 28px;
+            margin-bottom: 12px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .sub-message {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 30px;
+        }
+        
+        .back-button {
+            display: inline-block;
+            padding: 12px 28px;
+            background-color: #00FFB2;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 24px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 255, 178, 0.2);
+        }
+
+        .back-button:hover {
+            background-color: #00e6a0;
+            transform: translateY(-3px);
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .message {
+                font-size: 24px;
+            }
+            .sub-message {
+                font-size: 16px;
+            }
+            .back-button {
+                padding: 10px 24px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+            }
+            .message {
+                font-size: 20px;
+            }
+            .sub-message {
+                font-size: 14px;
+            }
+            .back-button {
+                padding: 8px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://i.ibb.co/8cx9xvJ/Flip-Shop.png" class="logo" alt="FlipShop Logo">
+        <div class="message">검색 결과를 찾을 수 없어요!</div>
+        <div class="sub-message">검색어를 확인하거나 다른 검색어로 다시 시도해 주세요.</div>
+        <a href="/" class="back-button">홈으로 돌아가기</a>
+    </div>
+</body>
+</html>
