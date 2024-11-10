@@ -20,48 +20,54 @@ from jose.exceptions import JWTError, ExpiredSignatureError
 import json
 import os
 import base64
+import urllib.parse
+import urllib.request
+import httpx
 
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, auth
 from google.cloud import vision
-import googlemaps
+from google.oauth2 import service_account  # 추가된 임포트
 from typing import List
+
+# 환경 변수 로드
+load_dotenv()
 
 Base = declarative_base()
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
-SECRET_KEY = 'dkgkqrurgkrhtlvek'  # 실제 키로 대체하세요
+SECRET_KEY = os.getenv('SECRET_KEY', 'your_default_secret_key')  # .env 파일에서 불러오기
 ALGORITHM = "HS256"
 
-DROP_API_KEY = "sl.CAGt-vySF-ZirFFECDavbWQwE6AC2vZBAW32-Hprfey35UKsZVM3_lDE1nOXZ2ulb4wrRL1rJhkPSL-uUNgHbg9wzTS2jqCz0CwJZgNYLTFSr4-DGdkeUTB3hszs_1NT6QyJgymkCshI3NGuE7ql300"  # 실제 키로 대체하세요
+DROP_API_KEY = os.getenv('DROP_API_KEY')  # .env 파일에서 불러오기
 dbx = dropbox.Dropbox(DROP_API_KEY)
-SQLALCHEMY_DATABASE_URL = "mysql+aiomysql://root:0p0p0p0P!!@svc.sel5.cloudtype.app:32764/flipdb"  # 실제 URL로 대체하세요
+SQLALCHEMY_DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite+aiosqlite:///./test.db')  # .env 파일에서 불러오기
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
-#.둪vkdlffhem
-load_dotenv()
-# 환경 변수에서 Firebase 시크릿 읽기
+NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID')  # .env 파일에서 불러오기
+NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET')  # .env 파일에서 불러오기
+
+GOOGLE_CSE_API_KEY = os.getenv("GOOGLE_CSE_API_KEY")
+GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
+
+# Firebase 설정
 encoded_firebase_key = os.getenv('FIREBASE_KEY_BASE64')
 
 if encoded_firebase_key:
     try:
         # Base64 디코딩
         decoded_firebase_key = base64.b64decode(encoded_firebase_key).decode('utf-8')
-        
-        # JSON 문자열을 파이썬 딕셔너리로 변환
+        # JSON 파싱
         firebase_config = json.loads(decoded_firebase_key)
-        
         # Firebase 자격 증명 객체 생성
         cred = credentials.Certificate(firebase_config)
-        
         # Firebase 초기화 (이미 초기화되었는지 확인)
         if not firebase_admin._apps:
             firebase_admin.initialize_app(cred)
         else:
             print("Firebase는 이미 초기화되었습니다.")
-        
         print("Firebase 초기화 성공")
     except (base64.binascii.Error, json.JSONDecodeError) as e:
         print(f"Firebase 환경 변수 디코딩 또는 JSON 파싱 오류: {str(e)}")
@@ -72,6 +78,31 @@ else:
     firebase_admin.initialize_app(cred)
     print("로컬 Firebase JSON 파일을 사용하여 Firebase 초기화 완료")
 
+# Vision API 설정
+encoded_vision_api_key = os.getenv('VISION_API_KEY_BASE64')
+
+if encoded_vision_api_key:
+    try:
+        # Base64 디코딩
+        decoded_vision_api_key = base64.b64decode(encoded_vision_api_key).decode('utf-8')
+        # JSON 파싱
+        vision_config = json.loads(decoded_vision_api_key)
+        # 서비스 계정 객체 생성
+        vision_credentials = service_account.Credentials.from_service_account_info(vision_config)
+        # Vision API 클라이언트 초기화
+        vision_client = vision.ImageAnnotatorClient(credentials=vision_credentials)
+        print("Vision API 초기화 성공")
+    except (base64.binascii.Error, json.JSONDecodeError) as e:
+        print(f"Vision API 환경 변수 디코딩 또는 JSON 파싱 오류: {str(e)}")
+        raise
+else:
+    # 기본 설정 사용
+    try:
+        vision_client = vision.ImageAnnotatorClient()
+        print("Vision API 초기화 성공 (기본 설정 사용)")
+    except Exception as e:
+        print(f"Vision API 초기화 실패: {str(e)}")
+        raise
 
 class ItemSchema(BaseModel):
     name: str
@@ -190,6 +221,54 @@ async def get_current_user(
         return user
     except (ExpiredSignatureError, JWTError):
         raise HTTPException(status_code=401, detail="User not authenticated")
+    
+
+# 네이버 검색API(이미지) 테스트 --여기부터1
+async def search_image(query: str, display: int = 10, start: int = 1, sort: str = "sim"):
+    # 요청 URL 생성
+    base_url = "https://openapi.naver.com/v1/search/image"
+    params = {
+        "query": query,
+        "display": display,
+        "start": start,
+        "sort": sort
+    }
+    url = f"{base_url}?{urllib.parse.urlencode(params)}"
+    
+    # 요청 헤더 설정
+    headers = {
+        "X-Naver-Client-Id": NAVER_CLIENT_ID,
+        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET
+    }
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, headers=headers)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(status_code=response.status_code, detail="API request failed")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"API request error: {str(e)}")
+# 네이버 검색API(이미지) 테스트 --여기까지1
+# 구글 커스텀 서치 테스트 --여기부터3
+async def search_google_image(query: str, num_results: int = 10):
+    base_url = "https://www.googleapis.com/customsearch/v1"
+    params = {
+        "q": query,
+        "cx": GOOGLE_CSE_ID,
+        "key": GOOGLE_CSE_API_KEY,
+        "searchType": "image",
+        "num": num_results,
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(base_url, params=params)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            raise Exception(f"Failed to fetch image: {response.status_code}, {response.text}")
+# 구글 커스텀 서치 테스트 --여기까지3
 
 @app.get("/")
 @app.get("/index")
@@ -640,11 +719,10 @@ async def search_category(
     return templates.TemplateResponse("home.html", {"request": request, "items": items_list})
 
 
-# Chatting 코드
-# 필요한 임포트 추가
+# 채팅 기능
 from sqlalchemy import and_, or_
 
-#채팅방 생성 코드
+# 채팅방 생성 코드
 @app.post("/chat")
 async def create_chat(
     item_id: int = Form(...),
@@ -680,7 +758,7 @@ async def create_chat(
     existing_chat = existing_chat.first()
     if existing_chat:
         # 채팅방이 이미 존재하므로 해당 채팅방의 ID를 반환
-        return {"chat_id": existing_chat.id, "chatname": existing_chat.chatname}
+        return {"chat_id": existing_chat.ChatModel.id, "chatname": existing_chat.ChatModel.chatname}
 
     # 새로운 채팅방 생성
     new_chat = ChatModel(
@@ -775,7 +853,7 @@ async def get_messages(
         for msg in messages
     ]
 
-#사용자의 채팅방 목록조회하기
+# 사용자의 채팅방 목록 조회
 @app.get("/chats", response_model=List[dict])
 async def get_user_chats(
     request: Request,
@@ -820,7 +898,7 @@ async def get_user_chats(
     })
 
 
-#채팅방페이지
+# 채팅방 페이지
 @app.get("/chat/{chat_id}")
 async def chat_page(chat_id: int, request: Request, db: AsyncSession = Depends(get_db)):
     # 현재 로그인된 사용자 정보 가져오기
@@ -838,6 +916,7 @@ async def chat_page(chat_id: int, request: Request, db: AsyncSession = Depends(g
 
     return templates.TemplateResponse("chat.html", {"request": request, "chat_id": chat_id, "user_id": current_user.id})
 
+# 채팅방 평가 코드
 @app.post("/chat/{chat_id}/evaluate")
 async def evaluate_chat(
     chat_id: int,
@@ -888,6 +967,79 @@ async def evaluate_chat(
     await db.commit()
     return {"msg": "평가가 완료되었습니다."}
 
+# 구글 커스텀 서치 테스트
+@app.get("/search_image")
+async def search_image_endpoint(
+    request: Request,
+    item_id: int = Query(..., description="검색할 아이템의 ID"),
+    db: AsyncSession = Depends(get_db)
+):
+    # 아이템 정보 조회
+    result = await db.execute(select(ItemModel).where(ItemModel.id == item_id))
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    image_url = item.image_url
+    if not image_url:
+        raise HTTPException(status_code=400, detail="Item does not have an image")
+
+    # 디버깅: 이미지 URL 출력
+    print(f"Image URL: {image_url}")
+    
+    # 이미지 다운로드
+    try:
+        async with httpx.AsyncClient() as client:
+            # follow_redirects=True 설정 추가
+            response = await client.get(image_url, follow_redirects=True)
+            if response.status_code == 200:
+                image_content = response.content
+            else:
+                raise HTTPException(status_code=500, detail=f"Failed to download image. Status code: {response.status_code}, Response: {response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to download image: {str(e)}")
+
+    # Google Vision API를 사용하여 라벨 추출
+    try:
+        # vision_client는 이미 초기화되었음
+        image = vision.Image(content=image_content)
+        response = vision_client.label_detection(image=image)
+        labels = response.label_annotations
+        if not labels:
+            raise HTTPException(status_code=400, detail="No labels detected in image")
+        # 상위 5개의 라벨을 사용하여 검색 쿼리 생성
+        query_terms = [label.description for label in labels[:5]]
+        query = " ".join(query_terms)
+        print(f"Generated query: {query}")  # 디버깅을 위한 출력
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image processing failed: {str(e)}")
+    
+    # Google Custom Search API 호출
+    try:
+        search_result = await search_google_image(query)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Google image search failed: {str(e)}")
+    
+    # 검색 결과 처리
+    if 'items' not in search_result or not search_result['items']:
+        return templates.TemplateResponse("no_result.html", {"request": request, "target": query})
+
+    # 검색 결과에서 필요한 데이터 추출
+    search_items = []
+    for item in search_result['items']:
+        search_items.append({
+            'title': item.get('title'),
+            'link': item.get('link'),  # 이미지 URL
+            'thumbnail': item.get('image', {}).get('thumbnailLink'),
+            'context_link': item.get('image', {}).get('contextLink')
+        })
+    
+    # 템플릿 렌더링
+    return templates.TemplateResponse("search_results.html", {
+        "request": request,
+        "query": query,
+        "search_results": search_items
+    })
 
 if __name__ == "__main__":  # 이 코드가 지금 접속 실행되었는가?
     import uvicorn
