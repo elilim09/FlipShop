@@ -40,14 +40,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 토큰 만료 시간 설정
 SECRET_KEY = os.getenv('SECRET_KEY', 'your_default_secret_key')  # .env 파일에서 불러오기
 ALGORITHM = "HS256"
 
-DROP_API_KEY = os.getenv('DROP_API_KEY')  # .env 파일에서 불러오기
+DROP_API_KEY = "sl.CAehuPaygXEwSvqbo-mVLEhsE-N2kGkebytXY3OlpeLqUCC6bQT6JwNlxp4bCQDaFiY9jKC-rV_L0pC13R79ce2HxVbU5xhMyOtBxaEpAq8bcEQu2A0GB0DiEMqTFQyTp0qJoMdN6-XTHpRqkBoNO3Q"
 dbx = dropbox.Dropbox(DROP_API_KEY)
 SQLALCHEMY_DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite+aiosqlite:///./test.db')  # .env 파일에서 불러오기
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
-NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID')  # .env 파일에서 불러오기
-NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET')  # .env 파일에서 불러오기
+NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID')  # 현재 사용되지 않는 코드
+NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET') # 현재 사용되지 않는 코드
 
 GOOGLE_CSE_API_KEY = os.getenv("GOOGLE_CSE_API_KEY")
 GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
@@ -941,7 +941,7 @@ async def evaluate_chat(
     if not other_user:
         raise HTTPException(status_code=404, detail="Other user not found")
 
-    # 거래 평가 반영 (cheats 컬럼 증가 등)
+    # 거래 평가 반영(cheats 컬럼 증가 등)
     if status == 'fraud':
         other_user.cheats += 1
     other_user.trans += 1

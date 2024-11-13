@@ -6,6 +6,12 @@
     <title>FlipShop</title>
     <link rel="icon" href="https://i.ibb.co/fFMYq7k/Flip-Shop.png">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <!-- meta 코드 -->
+    <meta property="og:url" content="bit.ly/플립샵">
+    <meta property="og:title" content="FlipShop">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://i.ibb.co/10cdX5v/Flip-Shop.png">
+    <meta property="og:description" content="ver. Alpha">
     <style>
         :root {
             --primary-color: #00FFB2;
@@ -140,7 +146,7 @@
         }
 
         .product .details .price::after {
-            content: ' 원 /day';
+            content: ' 원 /hour';
             font-size: 14px;
             font-weight: 600;
             color: #666;
@@ -404,7 +410,7 @@
                 <div class="details">
                     <h2>{{ item.name }}</h2>
                     <p>#{{ item.category }} | {{ item.local_category }}</p>
-                    <p class="price">{{ item.price_per_day }}</p>
+                    <p class="price">{{ "{:,.0f}".format(item.price_per_day) }}</p>
                 </div>
             </a>
         </div>
