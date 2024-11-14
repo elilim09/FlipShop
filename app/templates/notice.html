@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>공지사항 - FlipShop</title>
+    <link rel="icon" href="https://i.ibb.co/fFMYq7k/Flip-Shop.png">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset & Base Styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        /* Header Styles */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            height: 64px;
+        }
+
+        .header img {
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+        }
+
+        .back-button:hover {
+            background-color: #f1f3f5;
+        }
+
+        /* Container Styles */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        /* Notice List Styles */
+        .notice-list {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            overflow: hidden;
+        }
+
+        .notice-item {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .notice-item:last-child {
+            border-bottom: none;
+        }
+
+        .notice-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .notice-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #212529;
+            margin-bottom: 8px;
+        }
+
+        .notice-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #868e96;
+        }
+
+        .notice-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .notice-badge.important {
+            background-color: #ffe3e3;
+            color: #e03131;
+        }
+
+        .notice-badge.update {
+            background-color: #e3fafc;
+            color: #0c8599;
+        }
+
+        .notice-badge.event {
+            background-color: #fff3bf;
+            color: #f08c00;
+        }
+
+        /* Page Title Styles */
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #212529;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 640px) {
+            .container {
+                padding: 16px;
+            }
+
+            .page-title {
+                font-size: 20px;
+                margin-bottom: 16px;
+            }
+
+            .notice-item {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <button class="back-button" onclick="history.back();">&#8592;</button>
+        <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
+        <div style="width: 40px;"></div>
+    </header>
+    
+    <div class="container">
+        <h1 class="page-title">공지사항</h1>
+        
+        <div class="notice-list">
+            <div class="notice-item" onclick="location.href='/notice/1'">
+                <div class="notice-title">
+                    <span class="notice-badge important">중요</span>
+                    개인정보 처리방침 개정 안내
+                </div>
+                <div class="notice-meta">
+                    <span>2024.03.15</span>
+                    <span>조회 238</span>
+                </div>
+            </div>
+
+            <div class="notice-item" onclick="location.href='/notice/2'">
+                <div class="notice-title">
+                    <span class="notice-badge update">업데이트</span>
+                    FlipShop 서비스 업데이트 안내 (v2.1.0)
+                </div>
+                <div class="notice-meta">
+                    <span>2024.03.10</span>
+                    <span>조회 456</span>
+                </div>
+            </div>
+
+            <div class="notice-item" onclick="location.href='/notice/3'">
+                <div class="notice-title">
+                    <span class="notice-badge event">이벤트</span>
+                    봄맞이 대여 할인 이벤트 안내
+                </div>
+                <div class="notice-meta">
+                    <span>2024.03.01</span>
+                    <span>조회 892</span>
+                </div>
+            </div>
+
+            <div class="notice-item" onclick="location.href='/notice/4'">
+                <div class="notice-title">
+                    FlipShop 이용약관 개정 안내
+                </div>
+                <div class="notice-meta">
+                    <span>2024.02.28</span>
+                    <span>조회 325</span>
+                </div>
+            </div>
+
+            <div class="notice-item" onclick="location.href='/notice/5'">
+                <div class="notice-title">
+                    설 연휴 고객센터 운영 안내
+                </div>
+                <div class="notice-meta">
+                    <span>2024.02.08</span>
+                    <span>조회 567</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastScroll = 0;
+        
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            const header = document.querySelector('.header');
+            
+            if (currentScroll <= 0) {
+                header.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                return;
+            }
+            
+            if (currentScroll > lastScroll) {
+                header.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+            } else {
+                header.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+            }
+            
+            lastScroll = currentScroll;
+        });
+    </script>
+</body>
+</html>
+
+<!-- 클로드로 작성함. -->

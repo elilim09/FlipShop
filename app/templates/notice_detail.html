@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{{ notice.title }} - FlipShop</title>
+    <link rel="icon" href="https://i.ibb.co/fFMYq7k/Flip-Shop.png">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset & Base Styles */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        /* Header Styles */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            height: 64px;
+        }
+
+        .header img {
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s ease;
+        }
+
+        .back-button:hover {
+            background-color: #f1f3f5;
+        }
+
+        /* Container Styles */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        /* Notice Detail Styles */
+        .notice-container {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .notice-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .notice-title-wrapper {
+            margin-bottom: 16px;
+        }
+
+        .notice-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .notice-badge.important {
+            background-color: #ffe3e3;
+            color: #e03131;
+        }
+
+        .notice-badge.update {
+            background-color: #e3fafc;
+            color: #0c8599;
+        }
+
+        .notice-badge.event {
+            background-color: #fff3bf;
+            color: #f08c00;
+        }
+
+        .notice-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #212529;
+            margin-top: 8px;
+        }
+
+        .notice-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #868e96;
+            font-size: 14px;
+        }
+
+        .notice-content {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #495057;
+        }
+
+        .notice-content p {
+            margin-bottom: 16px;
+        }
+
+        .notice-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+
+        .notice-content ul, .notice-content ol {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        .notice-content li {
+            margin-bottom: 8px;
+        }
+
+        .notice-footer {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .notice-navigation {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #495057;
+            transition: background-color 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .nav-label {
+            font-size: 14px;
+            color: #868e96;
+        }
+
+        .nav-title {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 640px) {
+            .container {
+                padding: 16px;
+            }
+
+            .notice-container {
+                padding: 16px;
+            }
+
+            .notice-title {
+                font-size: 20px;
+            }
+
+            .notice-content {
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <button class="back-button" onclick="history.back();">&#8592;</button>
+        <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
+        <div style="width: 40px;"></div>
+    </header>
+    
+    <div class="container">
+        <div class="notice-container">
+            <div class="notice-header">
+                <div class="notice-title-wrapper">
+                    <span class="notice-badge update">업데이트</span>
+                    <h1 class="notice-title">FlipShop 서비스 업데이트 안내 (v2.1.0)</h1>
+                </div>
+                <div class="notice-meta">
+                    <span>2024.03.10</span>
+                    <span>조회 456</span>
+                </div>
+            </div>
+            
+            <div class="notice-content">
+                <p>안녕하세요, FlipShop입니다.<br>
+                더 나은 서비스 제공을 위한 업데이트 내용을 안내드립니다.</p>
+
+                <h3>1. 새로운 기능 추가</h3>
+                <ul>
+                    <li>상품 검색 필터 개선
+                        <ul>
+                            <li>가격대별 필터링 기능 추가</li>
+                            <li>지역별 검색 범위 설정 기능 추가</li>
+                        </ul>
+                    </li>
+                    <li>채팅 시스템 개선
+                        <ul>
+                            <li>이미지 전송 기능 추가</li>
+                            <li>읽지 않은 메시지 알림 기능 추가</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h3>2. 버그 수정</h3>
+                <ul>
+                    <li>상품 등록 시 간헐적으로 발생하던 오류 수정</li>
+                    <li>채팅방 목록이 정상적으로 로딩되지 않는 문제 해결</li>
+                    <li>알림 설정이 저장되지 않는 문제 수정</li>
+                </ul>
+
+                <p>더욱 편리한 서비스를 제공하기 위해 계속해서 노력하겠습니다.<br>
+                이용 중 불편사항이나 문의사항이 있으시다면 고객센터로 문의해 주시기 바랍니다.</p>
+
+                <p>감사합니다.</p>
+            </div>
+
+            <div class="notice-footer">
+                <div class="notice-navigation">
+                    <a href="/notice/3" class="nav-item">
+                        <div>
+                            <div class="nav-label">다음 글</div>
+                            <div class="nav-title">봄맞이 대여 할인 이벤트 안내</div>
+                        </div>
+                        <span>›</span>
+                    </a>
+                    <a href="/notice/1" class="nav-item">
+                        <div>
+                            <div class="nav-label">이전 글</div>
+                            <div class="nav-title">개인정보 처리방침 개정 안내</div>
+                        </div>
+                        <span>›</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastScroll = 0;
+        
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            const header = document.querySelector('.header');
+            
+            if (currentScroll <= 0) {
+                header.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                return;
+            }
+            
+            if (currentScroll > lastScroll) {
+                header.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+            } else {
+                header.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+            }
+            
+            lastScroll = currentScroll;
+        });
+    </script>
+</body>
+</html>

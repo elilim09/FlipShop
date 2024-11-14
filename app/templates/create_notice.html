@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>공지사항 작성 - FlipShop</title>
+    <link rel="icon" href="https://i.ibb.co/fFMYq7k/Flip-Shop.png">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* 기존 스타일 유지 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            height: 64px;
+        }
+
+        .header img {
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        /* 폼 스타일 추가 */
+        .notice-form {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #339af0;
+        }
+
+        .notice-type {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .type-option {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .type-option.active {
+            background-color: #339af0;
+            color: white;
+            border-color: #339af0;
+        }
+
+        .content-editor {
+            min-height: 400px;
+            resize: vertical;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #339af0;
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #228be6;
+        }
+
+        .btn-secondary {
+            background-color: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+        }
+
+        .btn-secondary:hover {
+            background-color: #e9ecef;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 16px;
+            }
+
+            .notice-form {
+                padding: 16px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <button class="back-button" onclick="history.back();">&#8592;</button>
+        <img src="https://i.ibb.co/fFMYq7k/Flip-Shop.png" alt="FlipShop Logo">
+        <div style="width: 40px;"></div>
+    </header>
+    
+    <div class="container">
+        <form class="notice-form" id="noticeForm">
+            <div class="form-group">
+                <label>공지 유형</label>
+                <div class="notice-type">
+                    <div class="type-option" data-type="update">업데이트</div>
+                    <div class="type-option" data-type="important">중요</div>
+                    <div class="type-option" data-type="event">이벤트</div>
+                    <div class="type-option" data-type="general">일반</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="title">제목</label>
+                <input type="text" id="title" class="form-control" placeholder="공지사항 제목을 입력하세요" required>
+            </div>
+
+            <div class="form-group">
+                <label for="content">내용</label>
+                <textarea id="content" class="form-control content-editor" placeholder="공지사항 내용을 입력하세요" required></textarea>
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="history.back();">취소</button>
+                <button type="submit" class="btn btn-primary">등록하기</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // 공지 유형 선택 기능
+        const typeOptions = document.querySelectorAll('.type-option');
+        let selectedType = null;
+
+        typeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                // 기존 선택 제거
+                typeOptions.forEach(opt => opt.classList.remove('active'));
+                // 새로운 선택 추가
+                option.classList.add('active');
+                selectedType = option.dataset.type;
+            });
+        });
+
+        // 폼 제출 처리
+        document.getElementById('noticeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!selectedType) {
+                alert('공지 유형을 선택해주세요.');
+                return;
+            }
+
+            const formData = {
+                type: selectedType,
+                title: document.getElementById('title').value,
+                content: document.getElementById('content').value,
+                createdAt: new Date().toISOString()
+            };
+
+            // TODO: API 호출 또는 서버로 데이터 전송
+            console.log('서버로 전송될 데이터:', formData);
+            
+            // 성공 시 목록 페이지로 이동
+            // window.location.href = '/notice';
+        });
+    </script>
+</body>
+</html>
