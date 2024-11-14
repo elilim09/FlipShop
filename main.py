@@ -7,7 +7,7 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, select, and_, or_, desc, DateTime, func, UniqueConstraint, delete
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, select, and_, or_, desc, asc, DateTime, func, UniqueConstraint, delete, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from app.auth import create_access_token, verify_password, get_password_hash, decode_access_token, Token
 from pydantic import BaseModel, validator, EmailStr
@@ -151,6 +151,7 @@ class UserModel(Base):
     bookmarks = Column(Text, nullable=True)
     trans = Column(Integer, default=0)
     cheats = Column(Integer, default=0)
+    is_admin = Column(Boolean, default=False)
 
     # 관계 설정
     items = relationship("ItemModel", back_populates="owner")
@@ -171,6 +172,21 @@ class ItemModel(Base):
 
     # 관계 설정 (optional)
     owner = relationship("UserModel", back_populates="items")
+
+
+class NoticeModel(Base):
+    __tablename__ = "notice"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255))
+    content = Column(Text)
+    type = Column(String(50))  # 'important', 'update', 'event', 'general'
+    created_at = Column(DateTime, default=dt.utcnow)
+    views = Column(Integer, default=0)
+    author_id = Column(Integer, ForeignKey('users.id'))
+
+    # 관계 설정
+    author = relationship("UserModel")
 
 
 class ChatModel(Base):
@@ -1040,6 +1056,90 @@ async def search_image_endpoint(
         "query": query,
         "search_results": search_items
     })
+
+
+
+
+    # 공지사항 관련 코드
+@app.get("/notice")
+async def get_notices(request: Request, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(NoticeModel).order_by(desc(NoticeModel.created_at)))
+    notices = result.scalars().all()
+    return templates.TemplateResponse("notice.html", {"request": request, "notices": notices})
+
+@app.get("/notice/{notice_id}")
+async def get_notice(notice_id: int, request: Request, db: AsyncSession = Depends(get_db)):
+    # 현재 공지사항 조회
+    result = await db.execute(select(NoticeModel).where(NoticeModel.id == notice_id))
+    notice = result.scalar_one_or_none()
+    if not notice:
+        raise HTTPException(status_code=404, detail="Notice not found")
+
+    # 조회수 증가
+    notice.views += 1
+    await db.commit()
+    await db.refresh(notice)
+
+    # 이전 글 조회 (현재 ID보다 작은 가장 큰 ID)
+    prev_result = await db.execute(
+        select(NoticeModel).where(NoticeModel.id < notice_id).order_by(desc(NoticeModel.id)).limit(1)
+    )
+    prev_notice = prev_result.scalar_one_or_none()
+
+    # 다음 글 조회 (현재 ID보다 큰 가장 작은 ID)
+    next_result = await db.execute(
+        select(NoticeModel).where(NoticeModel.id > notice_id).order_by(asc(NoticeModel.id)).limit(1)
+    )
+    next_notice = next_result.scalar_one_or_none()
+
+    # 템플릿에 전달
+    return templates.TemplateResponse("notice_detail.html", {
+        "request": request,
+        "notice": notice,
+        "prev_notice": prev_notice,
+        "next_notice": next_notice
+    })
+
+@app.get("/create_notice")
+async def create_notice_page(request: Request, db: AsyncSession = Depends(get_db)):
+    # 현재 사용자 가져오기
+    try:
+        current_user = await get_current_user(request, db)
+        # 관리자 여부 확인
+        if not current_user.is_admin:
+            raise HTTPException(status_code=403, detail="Permission denied")
+    except HTTPException:
+        return RedirectResponse(url="/login", status_code=303)
+    
+    return templates.TemplateResponse("create_notice.html", {"request": request})
+
+@app.post("/create_notice")
+async def create_notice(
+    request: Request,
+    title: str = Form(...),
+    type: str = Form(...),
+    content: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    # 관리자 여부 확인
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    new_notice = NoticeModel(
+        title=title,
+        type=type,
+        content=content,
+        author_id=current_user.id
+    )
+
+    db.add(new_notice)
+    await db.commit()
+    await db.refresh(new_notice)
+
+    return RedirectResponse(url=f"/notice/{new_notice.id}", status_code=303)
+
+
 
 if __name__ == "__main__":  # 이 코드가 지금 접속 실행되었는가?
     import uvicorn

@@ -96,17 +96,17 @@
             margin-right: 8px;
         }
 
-        .notice-badge.important {
+        .notice-badge.중요 {
             background-color: #ffe3e3;
             color: #e03131;
         }
 
-        .notice-badge.update {
+        .notice-badge.업데이트 {
             background-color: #e3fafc;
             color: #0c8599;
         }
 
-        .notice-badge.event {
+        .notice-badge.이벤트 {
             background-color: #fff3bf;
             color: #f08c00;
         }
@@ -217,70 +217,51 @@
         <div style="width: 40px;"></div>
     </header>
     
+    {% block content %}
     <div class="container">
         <div class="notice-container">
             <div class="notice-header">
                 <div class="notice-title-wrapper">
-                    <span class="notice-badge update">업데이트</span>
-                    <h1 class="notice-title">FlipShop 서비스 업데이트 안내 (v2.1.0)</h1>
+                    {% if notice.type %}
+                    <span class="notice-badge {{ notice.type }}">{{ notice.type | capitalize }}</span>
+                    {% endif %}
+                    <h1 class="notice-title">{{ notice.title }}</h1>
                 </div>
                 <div class="notice-meta">
-                    <span>2024.03.10</span>
-                    <span>조회 456</span>
+                    <span>{{ notice.created_at.strftime('%Y.%m.%d') }}</span>
+                    <span>조회 {{ notice.views }}</span>
                 </div>
             </div>
-            
             <div class="notice-content">
-                <p>안녕하세요, FlipShop입니다.<br>
-                더 나은 서비스 제공을 위한 업데이트 내용을 안내드립니다.</p>
-
-                <h3>1. 새로운 기능 추가</h3>
-                <ul>
-                    <li>상품 검색 필터 개선
-                        <ul>
-                            <li>가격대별 필터링 기능 추가</li>
-                            <li>지역별 검색 범위 설정 기능 추가</li>
-                        </ul>
-                    </li>
-                    <li>채팅 시스템 개선
-                        <ul>
-                            <li>이미지 전송 기능 추가</li>
-                            <li>읽지 않은 메시지 알림 기능 추가</li>
-                        </ul>
-                    </li>
-                </ul>
-
-                <h3>2. 버그 수정</h3>
-                <ul>
-                    <li>상품 등록 시 간헐적으로 발생하던 오류 수정</li>
-                    <li>채팅방 목록이 정상적으로 로딩되지 않는 문제 해결</li>
-                    <li>알림 설정이 저장되지 않는 문제 수정</li>
-                </ul>
-
-                <p>더욱 편리한 서비스를 제공하기 위해 계속해서 노력하겠습니다.<br>
-                이용 중 불편사항이나 문의사항이 있으시다면 고객센터로 문의해 주시기 바랍니다.</p>
-
-                <p>감사합니다.</p>
+                {{ notice.content | safe }}
             </div>
+        </div>
+    </div>
+    {% endblock %}
 
-            <div class="notice-footer">
-                <div class="notice-navigation">
-                    <a href="/notice/3" class="nav-item">
-                        <div>
-                            <div class="nav-label">다음 글</div>
-                            <div class="nav-title">봄맞이 대여 할인 이벤트 안내</div>
-                        </div>
-                        <span>›</span>
-                    </a>
-                    <a href="/notice/1" class="nav-item">
-                        <div>
-                            <div class="nav-label">이전 글</div>
-                            <div class="nav-title">개인정보 처리방침 개정 안내</div>
-                        </div>
-                        <span>›</span>
-                    </a>
-                </div>
-            </div>
+        <div class="notice-footer">
+            <div class="notice-navigation">
+                {% if next_notice %}
+                <a href="/notice/{{ next_notice.id }}" class="nav-item">
+                    <div>
+                        <div class="nav-label">다음 글</div>
+                        <div class="nav-title">{{ next_notice.title }}</div>
+                    </div>
+                    <span>›</span>
+                </a>
+                {% endif %}
+                
+                {% if prev_notice %}
+                <a href="/notice/{{ prev_notice.id }}" class="nav-item">
+                    <div>
+                        <div class="nav-label">이전 글</div>
+                        <div class="nav-title">{{ prev_notice.title }}</div>
+                    </div>
+                    <span>›</span>
+                </a>
+                {% endif %}
+        </div>
+    </div>
         </div>
     </div>
 

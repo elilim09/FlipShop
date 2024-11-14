@@ -169,26 +169,35 @@
         <div style="width: 40px;"></div>
     </header>
     
+    {% block content %}
     <div class="container">
-        <form class="notice-form" id="noticeForm">
+        <form class="notice-form" action="/create_notice" method="post">
             <div class="form-group">
                 <label>공지 유형</label>
                 <div class="notice-type">
-                    <div class="type-option" data-type="update">업데이트</div>
-                    <div class="type-option" data-type="important">중요</div>
-                    <div class="type-option" data-type="event">이벤트</div>
-                    <div class="type-option" data-type="general">일반</div>
+                    <label>
+                        <input type="radio" name="type" value="업데이트" required> 업데이트
+                    </label>
+                    <label>
+                        <input type="radio" name="type" value="중요"> 중요
+                    </label>
+                    <label>
+                        <input type="radio" name="type" value="이벤트"> 이벤트
+                    </label>
+                    <label>
+                        <input type="radio" name="type" value="일반"> 일반
+                    </label>
                 </div>
             </div>
 
             <div class="form-group">
                 <label for="title">제목</label>
-                <input type="text" id="title" class="form-control" placeholder="공지사항 제목을 입력하세요" required>
+                <input type="text" id="title" name="title" class="form-control" placeholder="공지사항 제목을 입력하세요" required>
             </div>
 
             <div class="form-group">
                 <label for="content">내용</label>
-                <textarea id="content" class="form-control content-editor" placeholder="공지사항 내용을 입력하세요" required></textarea>
+                <textarea id="content" name="content" class="form-control content-editor" placeholder="공지사항 내용을 입력하세요" required></textarea>
             </div>
 
             <div class="button-group">
@@ -197,6 +206,7 @@
             </div>
         </form>
     </div>
+    {% endblock %}
 
     <script>
         // 공지 유형 선택 기능
